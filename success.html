@@ -26,7 +26,7 @@
     }
 
     .container {
-      max-width: 700px;
+      max-width: 720px;
       margin: 40px auto;
       padding: 20px;
     }
@@ -45,6 +45,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
     }
 
     .card-body {
@@ -52,7 +54,7 @@
     }
 
     h1 {
-      font-size: 3rem;
+      font-size: 3.2rem;
       margin: 0 0 10px 0;
       color: var(--emerald);
     }
@@ -73,52 +75,51 @@
       margin-bottom: 35px;
     }
 
-    .items-list {
-      margin: 25px 0;
-    }
-
     .item {
       display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 0;
       border-bottom: 1px solid #f3f4f6;
     }
 
     .totals {
       margin-top: 30px;
-      padding-top: 20px;
+      padding-top: 25px;
       border-top: 2px solid #e5e7eb;
     }
 
     .total-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       font-size: 1.05rem;
     }
 
     .grand-total {
-      font-size: 1.5rem;
+      font-size: 1.55rem;
       font-weight: 700;
       color: var(--emerald);
-      margin-top: 15px;
+      margin-top: 18px;
+      padding-top: 15px;
+      border-top: 1px solid #d1d5db;
     }
 
     .btn {
       display: inline-block;
       background: var(--emerald);
       color: white;
-      padding: 16px 32px;
+      padding: 16px 36px;
       border-radius: 9999px;
       text-decoration: none;
       font-weight: 600;
       margin-top: 30px;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
     }
 
     .btn:hover {
       background: #14532d;
-      transform: translateY(-2px);
+      transform: translateY(-3px);
     }
 
     .confetti {
@@ -137,39 +138,43 @@
 
   <div class="container">
     <div class="text-center mb-10">
-      <div style="font-size: 4.5rem; margin-bottom: 20px;">🌿</div>
+      <div style="font-size: 4.8rem; margin-bottom: 20px;">🌿</div>
       <h1 class="hero-font">Thank You!</h1>
-      <p style="font-size: 1.4rem; color: #166534;">Your order has been confirmed</p>
-      <p style="color: #4b5563; margin-top: 8px;">We're honored to support your fertility journey 💕</p>
+      <p style="font-size: 1.45rem; color: #166534; margin-top: 8px;">Your order has been confirmed</p>
+      <p style="color: #4b5563;">We're honored to support your fertility journey 💕</p>
     </div>
 
     <div class="card" id="order-card">
+      <!-- Header -->
       <div class="card-header">
         <div>
           <div style="font-size: 0.95rem; opacity: 0.9;">Order Number</div>
-          <div id="order-number" style="font-size: 1.6rem; font-weight: 600;">Loading...</div>
+          <div id="order-number" style="font-size: 1.65rem; font-weight: 600;">Loading...</div>
         </div>
         <div style="text-align: right;">
           <div style="font-size: 0.95rem; opacity: 0.9;">Status</div>
-          <div style="font-size: 1.3rem; font-weight: 600;">✅ Paid</div>
+          <div style="font-size: 1.35rem; font-weight: 600;">✅ Paid</div>
         </div>
       </div>
 
       <div class="card-body">
+        <!-- Shipping & Contact -->
         <div class="info-grid">
           <div>
             <div class="section-title">Shipping Details</div>
-            <div id="shipping-info" style="color: #374151; line-height: 1.7;"></div>
+            <div id="shipping-info" style="color: #374151; line-height: 1.75;"></div>
           </div>
           <div>
             <div class="section-title">Contact</div>
-            <div id="contact-info" style="color: #374151; line-height: 1.7;"></div>
+            <div id="contact-info" style="color: #374151; line-height: 1.75;"></div>
           </div>
         </div>
 
+        <!-- Items with Images -->
         <div class="section-title">Your Items</div>
-        <div id="order-items" class="items-list"></div>
+        <div id="order-items" style="margin: 25px 0;"></div>
 
+        <!-- Totals -->
         <div class="totals">
           <div class="total-row">
             <span>Subtotal</span>
@@ -189,9 +194,10 @@
           </div>
         </div>
 
+        <!-- Delivery Estimate -->
         <div style="margin-top: 35px; padding: 20px; background: #f0fdf4; border-radius: 16px;">
           <strong style="color: #166534;">Estimated Delivery:</strong>
-          <span id="delivery-estimate" style="color: #166534; margin-left: 10px;"></span>
+          <span id="delivery-estimate" style="color: #166534; margin-left: 12px; font-weight: 500;"></span>
         </div>
       </div>
     </div>
@@ -217,7 +223,10 @@
       const sessionId = urlParams.get("session_id");
 
       if (!sessionId) {
-        document.getElementById("order-card").innerHTML = `<div style="padding: 60px; text-align: center; color: #ef4444;">No order information found.</div>`;
+        document.getElementById("order-card").innerHTML = 
+          `<div style="padding: 80px; text-align: center; color: #ef4444;">
+             No order information found.
+           </div>`;
         return;
       }
 
@@ -233,9 +242,9 @@
       } catch (err) {
         console.error(err);
         document.getElementById("order-card").innerHTML = `
-          <div style="padding: 60px; text-align: center; color: #6b7280;">
+          <div style="padding: 70px; text-align: center; color: #6b7280;">
             <p>Your payment was successful!</p>
-            <p style="margin-top: 15px;">Please check your email for the order confirmation.</p>
+            <p style="margin-top: 20px;">Please check your email for the order confirmation.</p>
           </div>`;
       }
     }
@@ -255,27 +264,35 @@
         <strong>Shipping Method:</strong> ${m.shippingDisplay || m.shippingMethod || 'Standard'}
       `;
 
-      // Contact
+      // Contact Info
       document.getElementById("contact-info").innerHTML = `
         <strong>Email:</strong> ${order.email || m.email || ''}<br>
         <strong>Phone:</strong> ${m.phone || 'Not provided'}
       `;
 
-      // Items
+      // Items with Images
       let itemsHTML = '';
       if (order.products && Array.isArray(order.products)) {
         order.products.forEach(p => {
+          const imageHTML = p.image 
+            ? `<img src="${p.image}" style="width:72px;height:72px;object-fit:cover;border-radius:12px;" alt="${p.name}">`
+            : `<div style="width:72px;height:72px;background:#f3f4f6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">No Image</div>`;
+
           itemsHTML += `
             <div class="item">
-              <div>
-                <div style="font-weight: 500;">${p.name}</div>
-                <div style="font-size: 0.9rem; color: #6b7280;">Qty: ${p.quantity}</div>
+              ${imageHTML}
+              <div style="flex:1;">
+                <div style="font-weight:500;">${p.name}</div>
+                <div style="font-size:0.9rem;color:#6b7280;">Qty: ${p.quantity}</div>
               </div>
-              <div style="font-weight: 600;">$${(p.price || 0).toFixed(2)}</div>
+              <div style="font-weight:600;text-align:right;white-space:nowrap;">
+                $${(p.price || 0).toFixed(2)}
+              </div>
             </div>`;
         });
       }
-      document.getElementById("order-items").innerHTML = itemsHTML || '<p style="color:#9ca3af;">No items found.</p>';
+      document.getElementById("order-items").innerHTML = itemsHTML || 
+        '<p style="color:#9ca3af; text-align:center; padding:20px 0;">No items found.</p>';
 
       // Totals
       document.getElementById("subtotal").textContent = `$${(order.subtotal || 0).toFixed(2)}`;
@@ -293,9 +310,9 @@
 
     function triggerConfetti() {
       console.log("%c🎉 Order Confirmed! Premium success page loaded.", "color: #166534; font-size: 16px;");
-      // You can add a more advanced confetti script here later if desired
     }
 
+    // Load everything
     window.onload = loadSuccessPage;
   </script>
 </body>

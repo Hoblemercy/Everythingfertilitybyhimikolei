@@ -289,125 +289,134 @@
         }
         return true;
     }
-  async function startStripeCheckout() {
-    if (!validateForm()) return;
     
-    const payBtn = document.getElementById('pay-button');
-    if (!payBtn) return;
-    if (payBtn.disabled) return;
-    
-    payBtn.disabled = true;
-    payBtn.textContent = "Redirecting to secure checkout...";
-    
-    const email = document.getElementById('email').value.trim();
-    
-    // Get shipping display text for metadata
-    const shippingSelect = document.getElementById('shipping-method');
-    const shippingOption = shippingSelect.options[shippingSelect.selectedIndex];
-    const shippingDisplay = shippingOption.text; // e.g. "Express Shipping (2-4 days) - $15"
-    
-    const formData = {
-        firstName: document.getElementById('firstName').value.trim(),
-        lastName: document.getElementById('lastName').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        city: document.getElementById('city').value.trim() || '',
-        state: document.getElementById('state').value.trim() || '',
-        zip: document.getElementById('zip').value.trim() || '',
-        country: "US", // add this if you want
-        phone: document.getElementById('phone').value.trim() || '',
-        shippingMethod: shippingSelect.value,
-        shippingDisplay: shippingDisplay,
-        tipAmount: tipAmount.toString()
-    };
-    
-    const subtotal = calculateSubtotal();
-    const grandTotal = subtotal + shippingAmount + tipAmount;
-    
-    // Build line items (same as before)
-    const lineItems = cart.map(item => ({
-        price_data: {
-            currency: 'usd',
-            product_data: { name: item.name || item.displayName || 'Product' },
-            unit_amount: Math.round(item.price * 100),
-        },
-        quantity: item.quantity
-    }));
-    
-    // Add Shipping as line item
-    lineItems.push({
-        price_data: {
-            currency: 'usd',
-            product_data: { name: shippingDisplay.split(' - ')[0] || 'Shipping' },
-            unit_amount: Math.round(shippingAmount * 100),
-        },
-        quantity: 1
-    });
-    
-    // Add Tip if any
-    if (tipAmount > 0) {
+    async function startStripeCheckout() {
+        if (!validateForm()) return;
+        
+        const payBtn = document.getElementById('pay-button');
+        if (!payBtn) return;
+        if (payBtn.disabled) return;
+        
+        payBtn.disabled = true;
+        payBtn.textContent = "Redirecting to secure checkout...";
+        
+        const email = document.getElementById('email').value.trim();
+        
+        // Get shipping display text
+        const shippingSelect = document.getElementById('shipping-method');
+        const shippingOption = shippingSelect.options[shippingSelect.selectedIndex];
+        const shippingDisplay = shippingOption.text;
+        
+        const formData = {
+            firstName: document.getElementById('firstName').value.trim(),
+            lastName: document.getElementById('lastName').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            city: document.getElementById('city').value.trim() || '',
+            state: document.getElementById('state').value.trim() || '',
+            zip: document.getElementById('zip').value.trim() || '',
+            country: "NG",
+            phone: document.getElementById('phone').value.trim() || '',
+            shippingMethod: shippingSelect.value,
+            shippingDisplay: shippingDisplay,
+            tipAmount: tipAmount.toString()
+        };
+        
+        const subtotal = calculateSubtotal();
+        const grandTotal = subtotal + shippingAmount + tipAmount;
+        
+        // Build line items
+        const lineItems = cart.map(item => ({
+            price_data: {
+                currency: 'usd',
+                product_data: { name: item.name || item.displayName || 'Product' },
+                unit_amount: Math.round(item.price * 100),
+            },
+            quantity: item.quantity
+        }));
+        
+        // Add Shipping
         lineItems.push({
             price_data: {
                 currency: 'usd',
-                product_data: { name: "Support Tip 💕" },
-                unit_amount: Math.round(tipAmount * 100),
+                product_data: { name: shippingDisplay.split(' - ')[0] || 'Shipping' },
+                unit_amount: Math.round(shippingAmount * 100),
             },
             quantity: 1
         });
-    }
-    
-    try {
-        const { data: session, error } = await supabase.functions.invoke('create-checkout', {
-            body: {
-                line_items: lineItems,
-                mode: 'payment',
-                success_url: window.location.origin + "/success.html?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url: window.location.origin + "/checkout.html",
-                customer_email: email,
-                metadata: {
-                    ...formData,
-                    source: "everything-fertility-checkout",
-                    subtotal: subtotal.toFixed(2),
-                    shipping: shippingAmount.toFixed(2),
-                    tip: tipAmount.toFixed(2),
-                    grandTotal: grandTotal.toFixed(2)
-                }
+        
+        // Add Tip if any
+        if (tipAmount > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: "Support Tip 💕" },
+                    unit_amount: Math.round(tipAmount * 100),
+                },
+                quantity: 1
+            });
+        }
+        
+        // === PASS PRODUCT IMAGES TO METADATA ===
+        const productImages = {};
+        cart.forEach(item => {
+            if (item.image) {
+                const productKey = (item.name || item.displayName || 'product')
+                    .replace(/[^a-zA-Z0-9]/g, '_')
+                    .toLowerCase();
+                productImages[`product_image_${productKey}`] = item.image;
             }
         });
         
-        if (error) throw error;
-        if (!session?.id) throw new Error("No checkout session returned from server");
-        
-        await stripe.redirectToCheckout({ sessionId: session.id });
-        
-    } catch (err) {
-        console.error("Checkout Error:", err);
-        let msg = "Sorry, we couldn't start the payment process. Please try again.";
-        if (err.message) msg = err.message;
-        else if (err?.error?.message) msg = err.error.message;
-        
-        alert("Payment Error: " + msg);
-        
-        payBtn.disabled = false;
-        payBtn.textContent = "Pay Now with Stripe 💕";
+        try {
+            const { data: session, error } = await supabase.functions.invoke('create-checkout', {
+                body: {
+                    line_items: lineItems,
+                    mode: 'payment',
+                    success_url: window.location.origin + "/success.html?session_id={CHECKOUT_SESSION_ID}",
+                    cancel_url: window.location.origin + "/checkout.html",
+                    customer_email: email,
+                    metadata: {
+                        ...formData,
+                        source: "everything-fertility-checkout",
+                        subtotal: subtotal.toFixed(2),
+                        shipping: shippingAmount.toFixed(2),
+                        tip: tipAmount.toFixed(2),
+                        grandTotal: grandTotal.toFixed(2),
+                        ...productImages // ← Product images are now passed
+                    }
+                }
+            });
+            
+            if (error) throw error;
+            if (!session?.id) throw new Error("No checkout session returned from server");
+            
+            await stripe.redirectToCheckout({ sessionId: session.id });
+            
+        } catch (err) {
+            console.error("Checkout Error:", err);
+            let msg = "Sorry, we couldn't start the payment process. Please try again.";
+            if (err.message) msg = err.message;
+            else if (err?.error?.message) msg = err.error.message;
+            
+            alert("Payment Error: " + msg);
+            
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay Now with Stripe 💕";
+        }
     }
-}
-
-
     
-    // Expose to global scope
+    // Expose functions
     window.startStripeCheckout = startStripeCheckout;
     window.updateTip = updateTip;
     window.updateShipping = updateShipping;
     
     window.onload = () => {
         loadCart();
-        
         if (cart.length === 0) {
             alert("Your cart is empty!");
             window.location.href = "cart.html";
             return;
         }
-        
         renderOrderSummary();
     };
 </script>
