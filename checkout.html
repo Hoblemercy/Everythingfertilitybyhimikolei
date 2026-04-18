@@ -76,14 +76,8 @@
             <select id="country"><option value="NG" selected>Nigeria</option></select>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-                <div>
-                    <label>First Name <span style="color:red">*</span></label>
-                    <input type="text" id="firstName" required>
-                </div>
-                <div>
-                    <label>Last Name <span style="color:red">*</span></label>
-                    <input type="text" id="lastName" required>
-                </div>
+                <div><label>First Name <span style="color:red">*</span></label><input type="text" id="firstName" required></div>
+                <div><label>Last Name <span style="color:red">*</span></label><input type="text" id="lastName" required></div>
             </div>
 
             <label>Full Address <span style="color:red">*</span></label>
@@ -102,9 +96,9 @@
             <label class="checkbox-label">
                 <input type="checkbox" id="save-info"> Save this information for next time
             </label>
-            
-                        <h2 style="margin-top:30px;">Shipping Method</h2>
-            <select id="shipping-method" style="width:100%; padding:12px 14px; border:1px solid #cbd5e1; border-radius:8px;">
+
+            <h2 style="margin-top:30px;">Shipping Method</h2>
+            <select id="shipping-method" onchange="updateShipping()">
                 <option value="standard">Standard Shipping (7-10 days) - $8</option>
                 <option value="express" selected>Express Shipping (2-4 days) - $15</option>
                 <option value="pickup">Local Pickup (Ibadan) - $0</option>
@@ -131,7 +125,7 @@
 
             <div style="margin:20px 0; line-height:1.8;">
                 <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
-                <div style="display:flex;justify-content:space-between;"><span>Shipping</span><span>Calculated at checkout</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>Shipping</span><span id="shipping-display">$0.00</span></div>
                 <div style="display:flex;justify-content:space-between;"><span>Tip</span><span id="tip-display">$0.00</span></div>
             </div>
 
@@ -163,6 +157,13 @@
     
     let cart = [];
     let tipAmount = 0;
+    let shippingAmount = 15; // default = express
+
+    const shippingRates = {
+        standard: 8,
+        express: 15,
+        pickup: 0
+    };
 
     function loadCart() {
         const saved = localStorage.getItem('cart');
@@ -171,6 +172,12 @@
 
     function calculateSubtotal() {
         return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+
+    function updateShipping() {
+        const method = document.getElementById('shipping-method').value;
+        shippingAmount = shippingRates[method] || 0;
+        renderOrderSummary();
     }
 
     function renderOrderSummary() {
@@ -192,9 +199,12 @@
         container.innerHTML = html;
 
         const subtotal = calculateSubtotal();
+        const grandTotal = subtotal + shippingAmount + tipAmount;
+
         document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('shipping-display').textContent = `$${shippingAmount.toFixed(2)}`;
         document.getElementById('tip-display').textContent = `$${tipAmount.toFixed(2)}`;
-        document.getElementById('grand-total').textContent = `$${(subtotal + tipAmount).toFixed(2)} USD`;
+        document.getElementById('grand-total').textContent = `$${grandTotal.toFixed(2)} USD`;
     }
 
     function updateTip() {
@@ -224,82 +234,101 @@
         return true;
     }
 
-async function startStripeCheckout() {
-    if (!validateForm()) return;
-    
-    const payBtn = document.getElementById('pay-button');
-    payBtn.disabled = true;
-    payBtn.textContent = "Redirecting to secure checkout...";
-    
-    const email = document.getElementById('email').value.trim();
-    
-    // Collect ALL form data
-    const formData = {
-        firstName: document.getElementById('firstName').value.trim(),
-        lastName: document.getElementById('lastName').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        city: document.getElementById('city').value.trim(),
-        state: document.getElementById('state').value.trim(),
-        zip: document.getElementById('zip').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        shippingMethod: document.getElementById('shipping-method').value,
-        tipAmount: tipAmount
-    };
-    
-    const subtotal = calculateSubtotal();
-    const total = subtotal + tipAmount;
-    
-    const lineItems = cart.map(item => ({
-        price_data: {
-            currency: 'usd',
-            product_data: { name: item.name || item.displayName },
-            unit_amount: Math.round(item.price * 100),
-        },
-        quantity: item.quantity
-    }));
-    
-    if (tipAmount > 0) {
+    async function startStripeCheckout() {
+        if (!validateForm()) return;
+
+        const payBtn = document.getElementById('pay-button');
+        payBtn.disabled = true;
+        payBtn.textContent = "Redirecting to secure checkout...";
+
+        const email = document.getElementById('email').value.trim();
+        
+        const formData = {
+            firstName: document.getElementById('firstName').value.trim(),
+            lastName: document.getElementById('lastName').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            state: document.getElementById('state').value.trim(),
+            zip: document.getElementById('zip').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            shippingMethod: document.getElementById('shipping-method').value,
+            tipAmount: tipAmount.toString()
+        };
+
+        const subtotal = calculateSubtotal();
+        const grandTotal = subtotal + shippingAmount + tipAmount;
+
+        // Build line items including shipping
+        const lineItems = cart.map(item => ({
+            price_data: {
+                currency: 'usd',
+                product_data: { name: item.name || item.displayName },
+                unit_amount: Math.round(item.price * 100),
+            },
+            quantity: item.quantity
+        }));
+
+        // Add Shipping as a line item
         lineItems.push({
             price_data: {
                 currency: 'usd',
-                product_data: { name: "Support Tip 💕" },
-                unit_amount: Math.round(tipAmount * 100),
+                product_data: { 
+                    name: `${document.getElementById('shipping-method').options[document.getElementById('shipping-method').selectedIndex].text.split(' - ')[0]} Shipping`
+                },
+                unit_amount: Math.round(shippingAmount * 100),
             },
             quantity: 1
         });
-    }
-    
-    try {
-        const { data: session, error } = await supabase.functions.invoke('create-checkout', {
-            body: {
-                line_items: lineItems,
-                success_url: window.location.origin + "/success.html?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url: window.location.origin + "/checkout.html",
-                customer_email: email,
-                metadata: {
-                    ...formData,
-                    source: "everything-fertility-checkout"
+
+        // Add Tip if any
+        if (tipAmount > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: "Support Tip 💕" },
+                    unit_amount: Math.round(tipAmount * 100),
+                },
+                quantity: 1
+            });
+        }
+
+        try {
+            const { data: session, error } = await supabase.functions.invoke('create-checkout', {
+                body: {
+                    line_items: lineItems,
+                    success_url: window.location.origin + "/success.html?session_id={CHECKOUT_SESSION_ID}",
+                    cancel_url: window.location.origin + "/checkout.html",
+                    customer_email: email,
+                    metadata: {
+                        ...formData,
+                        source: "everything-fertility-checkout"
+                    }
                 }
-            }
-        });
-        
-        if (error) throw error;
-        if (!session?.id) throw new Error("No session returned");
-        
-        await stripe.redirectToCheckout({ sessionId: session.id });
-        
-    } catch (err) {
-        console.error(err);
-        alert("Sorry, we couldn't start the payment process. Please try again.");
-        payBtn.disabled = false;
-        payBtn.textContent = "Pay Now with Stripe 💕";
+            });
+
+            if (error) throw error;
+            if (!session?.id) throw new Error("No session returned from server");
+
+            await stripe.redirectToCheckout({ sessionId: session.id });
+
+        } catch (err: any) {
+            console.error("Checkout Error:", err);
+            
+            let msg = "Sorry, we couldn't start the payment process. Please try again.";
+            if (err.message) msg = err.message;
+            else if (err.error?.message) msg = err.error.message;
+            
+            alert("Payment Error: " + msg);
+            
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay Now with Stripe 💕";
+        }
     }
-}
 
-
-
+    // Expose functions
     window.startStripeCheckout = startStripeCheckout;
     window.updateTip = updateTip;
+    window.updateShipping = updateShipping;
 
     window.onload = () => {
         loadCart();
