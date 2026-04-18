@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed - Everything Fertility by Himiko</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+      --emerald: #166534;
+      --emerald-light: #4ade80;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #f0fdf4, #ffffff);
+      color: #1f2937;
+      line-height: 1.6;
+    }
+
+    .hero-font {
+      font-family: 'Playfair Display', sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: var(--emerald);
+      color: white;
+      padding: 30px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-body {
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin: 0 0 10px 0;
+      color: var(--emerald);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--emerald);
+      margin-bottom: 15px;
+      border-bottom: 2px solid #f3f4f6;
+      padding-bottom: 8px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 35px;
+    }
+
+    .items-list {
+      margin: 25px 0;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .totals {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .grand-total {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--emerald);
+      margin-top: 15px;
+    }
+
+    .btn {
+      display: inline-block;
+      background: var(--emerald);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 9999px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 30px;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      background: #14532d;
+      transform: translateY(-2px);
+    }
+
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="confetti" id="confetti"></div>
+
+  <div class="container">
+    <div class="text-center mb-10">
+      <div style="font-size: 4.5rem; margin-bottom: 20px;">🌿</div>
+      <h1 class="hero-font">Thank You!</h1>
+      <p style="font-size: 1.4rem; color: #166534;">Your order has been confirmed</p>
+      <p style="color: #4b5563; margin-top: 8px;">We're honored to support your fertility journey 💕</p>
+    </div>
+
+    <div class="card" id="order-card">
+      <div class="card-header">
+        <div>
+          <div style="font-size: 0.95rem; opacity: 0.9;">Order Number</div>
+          <div id="order-number" style="font-size: 1.6rem; font-weight: 600;">Loading...</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.95rem; opacity: 0.9;">Status</div>
+          <div style="font-size: 1.3rem; font-weight: 600;">✅ Paid</div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="info-grid">
+          <div>
+            <div class="section-title">Shipping Details</div>
+            <div id="shipping-info" style="color: #374151; line-height: 1.7;"></div>
+          </div>
+          <div>
+            <div class="section-title">Contact</div>
+            <div id="contact-info" style="color: #374151; line-height: 1.7;"></div>
+          </div>
+        </div>
+
+        <div class="section-title">Your Items</div>
+        <div id="order-items" class="items-list"></div>
+
+        <div class="totals">
+          <div class="total-row">
+            <span>Subtotal</span>
+            <span id="subtotal">$0.00</span>
+          </div>
+          <div class="total-row">
+            <span>Shipping</span>
+            <span id="shipping">$0.00</span>
+          </div>
+          <div class="total-row">
+            <span>Tip</span>
+            <span id="tip">$0.00</span>
+          </div>
+          <div class="grand-total">
+            <span>Total Paid</span>
+            <span id="total">$0.00 USD</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 35px; padding: 20px; background: #f0fdf4; border-radius: 16px;">
+          <strong style="color: #166534;">Estimated Delivery:</strong>
+          <span id="delivery-estimate" style="color: #166534; margin-left: 10px;"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <a href="index.html" class="btn">Return to Shop</a>
+      <p style="margin-top: 30px; color: #6b7280; font-size: 0.95rem;">
+        A confirmation email has been sent to your inbox.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const supabase = createClient(
+      "https://jffkatwagcfshvddnipr.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8"
+    );
+
+    async function loadSuccessPage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get("session_id");
+
+      if (!sessionId) {
+        document.getElementById("order-card").innerHTML = `<div style="padding: 60px; text-align: center; color: #ef4444;">No order information found.</div>`;
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.functions.invoke("retrieve-order", {
+          body: { session_id: sessionId }
+        });
+
+        if (error || !data?.order) throw new Error("Failed to load order");
+
+        renderOrder(data.order);
+        triggerConfetti();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("order-card").innerHTML = `
+          <div style="padding: 60px; text-align: center; color: #6b7280;">
+            <p>Your payment was successful!</p>
+            <p style="margin-top: 15px;">Please check your email for the order confirmation.</p>
+          </div>`;
+      }
+    }
+
+    function renderOrder(order) {
+      const m = order.metadata || {};
+
+      // Order Number
+      document.getElementById("order-number").textContent = order.order_number || "HIMIKO-XXXXX";
+
+      // Shipping Info
+      document.getElementById("shipping-info").innerHTML = `
+        <strong>${m.firstName || ''} ${m.lastName || ''}</strong><br>
+        ${m.address || ''}<br>
+        ${m.city || ''}, ${m.state || ''} ${m.zip || ''}<br>
+        ${m.country || 'Nigeria'}<br><br>
+        <strong>Shipping Method:</strong> ${m.shippingDisplay || m.shippingMethod || 'Standard'}
+      `;
+
+      // Contact
+      document.getElementById("contact-info").innerHTML = `
+        <strong>Email:</strong> ${order.email || m.email || ''}<br>
+        <strong>Phone:</strong> ${m.phone || 'Not provided'}
+      `;
+
+      // Items
+      let itemsHTML = '';
+      if (order.products && Array.isArray(order.products)) {
+        order.products.forEach(p => {
+          itemsHTML += `
+            <div class="item">
+              <div>
+                <div style="font-weight: 500;">${p.name}</div>
+                <div style="font-size: 0.9rem; color: #6b7280;">Qty: ${p.quantity}</div>
+              </div>
+              <div style="font-weight: 600;">$${(p.price || 0).toFixed(2)}</div>
+            </div>`;
+        });
+      }
+      document.getElementById("order-items").innerHTML = itemsHTML || '<p style="color:#9ca3af;">No items found.</p>';
+
+      // Totals
+      document.getElementById("subtotal").textContent = `$${(order.subtotal || 0).toFixed(2)}`;
+      document.getElementById("shipping").textContent = `$${(order.shipping_amount || parseFloat(m.shipping || 0)).toFixed(2)}`;
+      document.getElementById("tip").textContent = `$${(order.tip_amount || 0).toFixed(2)}`;
+      document.getElementById("total").textContent = `$${(order.total || 0).toFixed(2)} USD`;
+
+      // Delivery Estimate
+      const shippingMethod = (m.shippingDisplay || m.shippingMethod || "").toLowerCase();
+      let estimate = "7-10 business days";
+      if (shippingMethod.includes("express")) estimate = "2-4 business days";
+      if (shippingMethod.includes("pickup")) estimate = "Ready for pickup today in Ibadan";
+      document.getElementById("delivery-estimate").textContent = estimate;
+    }
+
+    function triggerConfetti() {
+      console.log("%c🎉 Order Confirmed! Premium success page loaded.", "color: #166534; font-size: 16px;");
+      // You can add a more advanced confetti script here later if desired
+    }
+
+    window.onload = loadSuccessPage;
+  </script>
+</body>
+</html>
