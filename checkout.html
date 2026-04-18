@@ -207,7 +207,7 @@
     
     let cart = [];
     let tipAmount = 0;
-    let shippingAmount = 15; // default = express
+    let shippingAmount = 15;
     
     const shippingRates = {
         standard: 8,
@@ -294,18 +294,15 @@
         if (!validateForm()) return;
         
         const payBtn = document.getElementById('pay-button');
-        if (!payBtn) return;
-        if (payBtn.disabled) return;
+        if (!payBtn || payBtn.disabled) return;
         
         payBtn.disabled = true;
         payBtn.textContent = "Redirecting to secure checkout...";
         
         const email = document.getElementById('email').value.trim();
         
-        // Get shipping display text
         const shippingSelect = document.getElementById('shipping-method');
-        const shippingOption = shippingSelect.options[shippingSelect.selectedIndex];
-        const shippingDisplay = shippingOption.text;
+        const shippingDisplay = shippingSelect.options[shippingSelect.selectedIndex].text;
         
         const formData = {
             firstName: document.getElementById('firstName').value.trim(),
@@ -356,14 +353,13 @@
             });
         }
         
-        // === PASS PRODUCT IMAGES TO METADATA ===
+        // === FIXED: Short metadata keys for images (max 40 chars) ===
         const productImages = {};
-        cart.forEach(item => {
+        cart.forEach((item, index) => {
             if (item.image) {
-                const productKey = (item.name || item.displayName || 'product')
-                    .replace(/[^a-zA-Z0-9]/g, '_')
-                    .toLowerCase();
-                productImages[`product_image_${productKey}`] = item.image;
+                // Short key: product_image_0, product_image_1, etc.
+                const shortKey = `product_image_${index}`;
+                productImages[shortKey] = item.image;
             }
         });
         
@@ -382,7 +378,7 @@
                         shipping: shippingAmount.toFixed(2),
                         tip: tipAmount.toFixed(2),
                         grandTotal: grandTotal.toFixed(2),
-                        ...productImages // ← Product images are now passed
+                        ...productImages // Now safe (keys are short)
                     }
                 }
             });
