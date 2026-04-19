@@ -339,7 +339,7 @@ th{
     setTimeout(() => {
       toast.classList.remove("show");
       setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    }, 4500); // slightly longer for mobile
   }
   
   /* Show/Hide Loading */
@@ -377,7 +377,7 @@ th{
     hideLoading();
   }
   
-  /* ================== ORDERS ================== */
+  /* ORDERS */
   async function loadOrders() {
     const { data, error } = await supabase
       .from("orders")
@@ -385,7 +385,6 @@ th{
       .order("created_at", { ascending: false });
     
     if (error) {
-      console.error(error);
       showToast("Failed to load orders", "error");
       return;
     }
@@ -440,10 +439,9 @@ th{
     const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
     hideLoading();
     
-    if (error) {
-      showToast("Failed to update status", "error");
-    } else {
-      showToast(`Status updated to ${newStatus.replace(/_/g, ' ')}`, "success");
+    if (error) showToast("Failed to update status", "error");
+    else {
+      showToast(`Status updated`, "success");
       loadOrders();
     }
   };
@@ -453,16 +451,16 @@ th{
     renderTable(filtered);
   };
   
-  /* ================== SEND TRACKING - IMPROVED WITH BETTER ERROR REPORTING ================== */
+  /* ================== IMPROVED SEND TRACKING ================== */
   window.sendTracking = async function(id, email) {
-    if (!email) return showToast("No email found for this order!", "error");
+    if (!email) return showToast("No email found!", "error");
     if (!confirm("Send tracking email to " + email + "?")) return;
     
     showLoading("Sending tracking email...");
     
     const tracking_id = crypto.randomUUID();
     
-    // Save tracking ID
+    // Save tracking ID first
     const { error: updateError } = await supabase
       .from("orders")
       .update({ tracking_id })
@@ -470,29 +468,24 @@ th{
     
     if (updateError) {
       hideLoading();
-      console.error("Database update error:", updateError);
-      return showToast("Failed to save tracking ID: " + updateError.message, "error");
+      return showToast("Failed to save tracking ID", "error");
     }
     
     const trackLink = `https://yourdomain.com/track.html?id=${tracking_id}`;
     
     const htmlTemplate = `
-    <div style="font-family: Inter, system-ui; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #f1f5f9; line-height: 1.6;">
-      <h1 style="color: #6366f1; text-align: center; margin-bottom: 30px;">Everything Fertility by Himiko</h1>
-      <div style="background: #1e293b; padding: 40px; border-radius: 20px;">
-        <h2 style="text-align:center; color:#22d3ee;">Your Order Tracking Link is Ready!</h2>
-        <p style="font-size:17px; text-align:center;">Hello,</p>
-        <p style="font-size:17px;">Your tracking number is: <strong>${tracking_id}</strong></p>
-        <p style="text-align:center; margin:40px 0;">
-          <a href="${trackLink}" style="background:#6366f1; color:white; padding:18px 36px; text-decoration:none; border-radius:9999px; font-size:18px; font-weight:700; display:inline-block;">
-            📍 Track Your Order Now
+    <div style="font-family: Inter, system-ui; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #f1f5f9;">
+      <h1 style="color: #6366f1; text-align: center;">Everything Fertility by Himiko</h1>
+      <div style="background: #1e293b; padding: 35px; border-radius: 20px; margin: 25px 0;">
+        <h2 style="text-align:center; color:#22d3ee;">Tracking Link Ready!</h2>
+        <p>Your tracking number: <strong>${tracking_id}</strong></p>
+        <p style="text-align:center; margin: 30px 0;">
+          <a href="${trackLink}" style="background:#6366f1; color:white; padding:16px 32px; text-decoration:none; border-radius:9999px; font-weight:700; display:inline-block;">
+            📍 Track Your Order
           </a>
         </p>
-        <p style="text-align:center; color:#94a3b8;">Thank you for choosing us!<br>We can't wait for you to receive your order ❤️</p>
       </div>
-      <p style="text-align:center; margin-top:30px; color:#64748b; font-size:14px;">
-        Everything Fertility by Himiko
-      </p>
+      <p style="text-align:center; color:#94a3b8;">Thank you ❤️</p>
     </div>`;
     
     try {
@@ -501,33 +494,34 @@ th{
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email,
-          subject: "Your Order Tracking Link is Ready ✨",
+          subject: "Your Order Tracking Link ✨",
           html: htmlTemplate
         })
       });
       
-      console.log("Response status:", response.status); // Debug log
-      
-      const result = await response.json();
-      console.log("Full response from send-mail:", result); // This will show the real error
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = { success: false, error: "Invalid response from server" };
+      }
       
       hideLoading();
       
       if (result.success) {
-        showToast(`✅ Tracking email sent successfully to ${email}`);
+        showToast(`✅ Tracking email sent to ${email}`, "success");
       } else {
-        const errorMsg = result.error || result.details || JSON.stringify(result);
-        console.error("Email sending failed:", errorMsg);
-        showToast(`Failed to send email: ${errorMsg}`, "error");
+        // Show the REAL error from Edge Function in the toast
+        const errorMsg = result.error || result.details || "Unknown server error";
+        showToast(`Failed: ${errorMsg}`, "error");
       }
     } catch (e) {
       hideLoading();
-      console.error("Network / Fetch error:", e);
-      showToast("Failed to reach email service. Check console (F12) for details.", "error");
+      showToast("Network error - cannot reach email service", "error");
     }
   };
   
-  /* ================== SEND BROADCAST - Also improved ================== */
+  /* SEND BROADCAST - Also improved */
   window.sendBroadcast = async function() {
     const msg = document.getElementById("msg").value.trim();
     const link = document.getElementById("link").value.trim();
@@ -536,8 +530,7 @@ th{
     if (!msg) return showToast("Message cannot be empty", "error");
     
     const emails = emailsInput ? emailsInput.split(",").map(e => e.trim()).filter(Boolean) : [];
-    
-    if (emails.length === 0) return showToast("Please add at least one email", "error");
+    if (emails.length === 0) return showToast("Add at least one email", "error");
     
     showLoading("Sending broadcast...");
     
@@ -552,31 +545,20 @@ th{
       hideLoading();
       
       if (result.success) {
-        showToast(`✅ Broadcast sent to ${emails.length} recipients!`);
+        showToast(`✅ Sent to ${emails.length} recipients`, "success");
       } else {
-        const errorMsg = result.error || result.details || "Unknown error";
-        console.error("Broadcast failed:", errorMsg);
-        showToast(`Failed to send broadcast: ${errorMsg}`, "error");
+        showToast(`Broadcast failed: ${result.error || "Unknown error"}`, "error");
       }
     } catch (e) {
       hideLoading();
-      console.error("Broadcast fetch error:", e);
-      showToast("Failed to reach broadcast service. Check console.", "error");
+      showToast("Cannot reach broadcast service", "error");
     }
   };
   
-  /* ================== TICKETS ================== */
+  /* TICKETS */
   async function loadTickets() {
-    const { data, error } = await supabase
-      .from("tickets")
-      .select("*")
-      .order("created_at", { ascending: false });
-    
-    if (error) {
-      console.error(error);
-      showToast("Failed to load tickets", "error");
-      return;
-    }
+    const { data, error } = await supabase.from("tickets").select("*").order("created_at", { ascending: false });
+    if (error) return showToast("Failed to load tickets", "error");
     
     document.getElementById("totalTickets").innerText = data?.length || 0;
     
@@ -594,11 +576,11 @@ th{
   }
   
   window.markResolved = async function(id) {
-    if (confirm("Mark this ticket as resolved?")) {
+    if (confirm("Mark resolved?")) {
       showLoading();
       await supabase.from("tickets").update({ status: "resolved" }).eq("id", id);
       hideLoading();
-      showToast("Ticket marked as resolved");
+      showToast("Ticket resolved");
       loadTickets();
     }
   };
