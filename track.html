@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Track Your Order - Everything Fertility by Himiko</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #6366f1;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .container { max-width: 720px; margin: 0 auto; }
+
+    header { text-align: center; margin: 30px 0 50px; }
+    .logo { font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 700; color: var(--primary); }
+    h1 { font-size: clamp(1.4rem, 4vw, 1.7rem); color: var(--text-muted); margin-top: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+    }
+
+    .order-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .order-number { font-size: 1.45rem; font-weight: 600; }
+    .status-badge {
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .tracking-box {
+      margin: 24px 0;
+      padding: 20px;
+      background: rgba(99,102,241,0.12);
+      border-radius: 16px;
+      text-align: center;
+      border: 1px solid rgba(99,102,241,0.3);
+    }
+
+    .product-section {
+      display: flex;
+      gap: 24px;
+      margin: 32px 0;
+      flex-wrap: wrap;
+    }
+
+    .product-images {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .product-images img {
+      width: 130px;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 16px;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 12px;
+      margin: 14px 0;
+      font-size: 1rem;
+    }
+
+    .btn-order-more {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--primary);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      margin: 30px auto 10px;
+    }
+
+    @media (max-width: 640px) {
+      .product-section { flex-direction: column; align-items: center; text-align: center; }
+      .detail-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<button id="themeToggle" style="position:fixed;top:16px;right:16px;background:none;border:none;font-size:1.6rem;cursor:pointer;z-index:100;">☀️</button>
+
+<div class="container">
+  <header>
+    <div class="logo">Everythingfertilitybyhimiko</div>
+    <h1 id="greeting">Order Tracking</h1>
+  </header>
+
+  <div id="loading" style="text-align:center; padding:80px 20px; color:#888;">
+    Loading your order...
+  </div>
+
+  <div class="card" id="orderContent" style="display:none;">
+    <div class="order-header">
+      <div class="order-number" id="orderNumber">📋 —</div>
+      <div class="status-badge" id="statusBadge"></div>
+    </div>
+
+    <div class="tracking-box">
+      <strong style="display:block; margin-bottom:10px; color:#6366f1;">📍 Your Tracking Link</strong>
+      <a id="customerTrackingLink" href="#" target="_blank"></a>
+    </div>
+
+    <div class="product-section">
+      <div class="product-images" id="productImages"></div>
+      <div>
+        <h3 id="productName" style="margin-bottom:12px;">—</h3>
+        <div class="detail-row"><div class="detail-label">Customer:</div><div id="fullName">—</div></div>
+        <div class="detail-row"><div class="detail-label">Price:</div><div id="price">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-row"><div class="detail-label">Shipping:</div><div id="shippingAddress">—</div></div>
+    <div class="detail-row"><div class="detail-label">Billing:</div><div id="billingAddress">—</div></div>
+    <div class="detail-row"><div class="detail-label">Placed:</div><div id="orderDate">—</div></div>
+
+    <div style="text-align:center; margin-top:40px;">
+      <a href="https://everythingfertilitybyhimikolei.shop" class="btn-order-more">
+        🛍️ Order More Products
+      </a>
+    </div>
+  </div>
+
+  <div id="notFound" class="card" style="display:none; text-align:center; padding:60px 20px;">
+    <h2>Order Not Found</h2>
+    <p>The tracking link is invalid or the order has not been processed yet.</p>
+    <p>Please check the link or contact support.</p>
+  </div>
+</div>
+
+<script>
+  const supabaseClient = supabase.createClient(
+    "https://jffkatwagcfshvddnipr.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8"
+  );
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const trackingId = urlParams.get("id");
+
+  if (!trackingId) {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("notFound").style.display = "block";
+  } else {
+    loadOrder(trackingId);
+  }
+
+  async function loadOrder(trackingId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from("orders")
+        .select("*")
+        .eq("tracking_id", trackingId)
+        .maybeSingle();
+
+      document.getElementById("loading").style.display = "none";
+
+      if (error || !data) {
+        document.getElementById("notFound").style.display = "block";
+        return;
+      }
+
+      displayOrder(data);
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("loading").innerHTML = "❌ Failed to load order. Please try again.";
+    }
+  }
+
+  function displayOrder(order) {
+    document.getElementById("orderContent").style.display = "block";
+
+    const firstName = order.first_name || "";
+    document.getElementById("greeting").textContent = firstName ? `Hello ${firstName}!` : "Order Tracking";
+
+    document.getElementById("orderNumber").innerHTML = `📋 ${order.order_number || "—"}`;
+
+    document.getElementById("fullName").textContent = 
+      `${order.first_name || ""} ${order.last_name || ""}`.trim() || "—";
+
+    const products = order.products || [];
+    const productNames = products.map(p => `${p.quantity || 1} × ${p.name || "Product"}`).join(", ");
+    document.getElementById("productName").textContent = productNames || "—";
+
+    document.getElementById("price").textContent = `$${(order.total || 0).toFixed(2)}`;
+
+    const address = `${order.full_address || ""}, ${order.city || ""}, ${order.state || ""} ${order.zip || ""}`.trim();
+    document.getElementById("shippingAddress").textContent = address || "—";
+    document.getElementById("billingAddress").textContent = address || "—";
+
+    if (order.paid_at) {
+      const d = new Date(order.paid_at);
+      document.getElementById("orderDate").textContent = d.toLocaleDateString("en-US", { 
+        year: "numeric", month: "long", day: "numeric" 
+      });
+    }
+
+    // Product Images
+    const imgCont = document.getElementById("productImages");
+    imgCont.innerHTML = "";
+    products.forEach(p => {
+      if (p.image) {
+        const img = document.createElement("img");
+        img.src = p.image;
+        imgCont.appendChild(img);
+      }
+    });
+
+    // Status
+    const status = (order.status || "pending").toUpperCase();
+    document.getElementById("statusBadge").textContent = status;
+  }
+
+  // Theme toggle
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    document.body.classList.toggle("light-mode");
+    document.getElementById("themeToggle").textContent = document.body.classList.contains("light-mode") ? "🌙" : "☀️";
+  });
+</script>
+
+<style>
+  body.light-mode {
+    --bg: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text: #1e293b;
+    --text-muted: #64748b;
+  }
+</style>
+</body>
+</html>
