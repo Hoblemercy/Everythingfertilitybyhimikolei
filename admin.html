@@ -304,107 +304,106 @@ th{
 <div id="toastContainer"></div>
 
 <script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-const supabaseUrl = "https://jffkatwagcfshvddnipr.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8";
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-const EDGE_FUNCTION_URL = "https://jffkatwagcfshvddnipr.supabase.co/functions/v1";
-const HASH = "d51566119c8e92e33598ed78543e259ab19e99cc456181c604a2881198d6f958";
-
-let allOrders = [];
-
-// SHA-256
-async function sha256(text){
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-
-/* Toast Function */
-function showToast(message, type = "success") {
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  
+  const supabaseUrl = "https://jffkatwagcfshvddnipr.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8";
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  const EDGE_FUNCTION_URL = "https://jffkatwagcfshvddnipr.supabase.co/functions/v1";
+  const HASH = "d51566119c8e92e33598ed78543e259ab19e99cc456181c604a2881198d6f958";
+  
+  let allOrders = [];
+  
+  // SHA-256
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  
+  /* Toast Function */
+  function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
     ${type === "success" ? '<i class="fa-solid fa-check-circle"></i>' : 
       type === "error" ? '<i class="fa-solid fa-circle-xmark"></i>' : 
       '<i class="fa-solid fa-info-circle"></i>'}
     <span>${message}</span>
   `;
-  document.getElementById("toastContainer").appendChild(toast);
-  
-  setTimeout(() => toast.classList.add("show"), 10);
-  
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
-}
-
-/* Show/Hide Loading */
-function showLoading(text = "Processing...") {
-  document.getElementById("loadingText").textContent = text;
-  document.getElementById("loadingOverlay").style.display = "flex";
-}
-
-function hideLoading() {
-  document.getElementById("loadingOverlay").style.display = "none";
-}
-
-/* LOGIN */
-window.login = async function(){
-  const input = document.getElementById("password").value.trim();
-  if (!input) return showToast("Please enter password", "error");
-
-  showLoading("Verifying...");
-  const hashed = await sha256(input);
-  hideLoading();
-
-  if(hashed === HASH){
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="block";
-    init();
-  } else {
-    showToast("❌ Wrong password", "error");
+    document.getElementById("toastContainer").appendChild(toast);
+    
+    setTimeout(() => toast.classList.add("show"), 10);
+    
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
   }
-};
-
-/* INIT */
-async function init(){
-  showLoading("Loading dashboard...");
-  await Promise.all([loadOrders(), loadTickets()]);
-  hideLoading();
-}
-
-/* ================== ORDERS ================== */
-async function loadOrders(){
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    showToast("Failed to load orders", "error");
-    return;
+  
+  /* Show/Hide Loading */
+  function showLoading(text = "Processing...") {
+    document.getElementById("loadingText").textContent = text;
+    document.getElementById("loadingOverlay").style.display = "flex";
   }
-
-  allOrders = data || [];
-  document.getElementById("totalOrders").innerText = allOrders.length;
-  renderTable(allOrders);
-}
-
-/* Updated renderTable with Status Selector */
-function renderTable(orders) {
-  const tbody = document.querySelector("#ordersTable tbody");
-  tbody.innerHTML = "";
-
-  orders.forEach(order => {
-    const currentStatus = (order.status || 'pending').toLowerCase().replace(/\s+/g, '_');
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+  
+  function hideLoading() {
+    document.getElementById("loadingOverlay").style.display = "none";
+  }
+  
+  /* LOGIN */
+  window.login = async function() {
+    const input = document.getElementById("password").value.trim();
+    if (!input) return showToast("Please enter password", "error");
+    
+    showLoading("Verifying...");
+    const hashed = await sha256(input);
+    hideLoading();
+    
+    if (hashed === HASH) {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      init();
+    } else {
+      showToast("❌ Wrong password", "error");
+    }
+  };
+  
+  /* INIT */
+  async function init() {
+    showLoading("Loading dashboard...");
+    await Promise.all([loadOrders(), loadTickets()]);
+    hideLoading();
+  }
+  
+  /* ================== ORDERS ================== */
+  async function loadOrders() {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error(error);
+      showToast("Failed to load orders", "error");
+      return;
+    }
+    
+    allOrders = data || [];
+    document.getElementById("totalOrders").innerText = allOrders.length;
+    renderTable(allOrders);
+  }
+  
+  function renderTable(orders) {
+    const tbody = document.querySelector("#ordersTable tbody");
+    tbody.innerHTML = "";
+    
+    orders.forEach(order => {
+      const currentStatus = (order.status || 'pending').toLowerCase().replace(/\s+/g, '_');
+      
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
       <td><strong>#${order.order_number || order.id?.slice(0,8)}</strong></td>
       <td>${order.first_name || ''} ${order.last_name || ''}</td>
       <td>${order.email || ''}</td>
@@ -429,63 +428,55 @@ function renderTable(orders) {
         </button>
       </td>
     `;
-    tbody.appendChild(tr);
-  });
-}
-
-/* New Function: Update Order Status */
-window.updateOrderStatus = async function(orderId) {
-  const select = document.getElementById(`status-${orderId}`);
-  const newStatus = select.value;
-
-  showLoading("Updating status...");
-
-  const { error } = await supabase
-    .from("orders")
-    .update({ status: newStatus })
-    .eq("id", orderId);
-
-  hideLoading();
-
-  if (error) {
-    showToast("Failed to update status", "error");
-  } else {
-    showToast(`Status updated to ${newStatus.replace(/_/g, ' ')}`, "success");
-    loadOrders(); // Refresh the table
+      tbody.appendChild(tr);
+    });
   }
-};
-
-
-window.searchOrders = function(q){
-  const filtered = allOrders.filter(o => 
-    (o.email || "").toLowerCase().includes(q.toLowerCase())
-  );
-  renderTable(filtered);
-};
-
-/* ================== SEND TRACKING ================== */
-/* ================== SEND TRACKING (Beautiful HTML Template) ================== */
-window.sendTracking = async function(id, email) {
-  if (!email) return showToast("No email found for this order!", "error");
-  if (!confirm("Send beautiful tracking email to " + email + "?")) return;
   
-  showLoading("Sending premium tracking email...");
-  
-  const tracking_id = crypto.randomUUID();
-  
-  const { error: updateError } = await supabase
-    .from("orders")
-    .update({ tracking_id })
-    .eq("id", id);
-  
-  if (updateError) {
+  window.updateOrderStatus = async function(orderId) {
+    const select = document.getElementById(`status-${orderId}`);
+    const newStatus = select.value;
+    
+    showLoading("Updating status...");
+    const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
     hideLoading();
-    return showToast("Failed to generate tracking ID", "error");
-  }
+    
+    if (error) {
+      showToast("Failed to update status", "error");
+    } else {
+      showToast(`Status updated to ${newStatus.replace(/_/g, ' ')}`, "success");
+      loadOrders();
+    }
+  };
   
-  const trackLink = `https://yourdomain.com/track.html?id=${tracking_id}`;
+  window.searchOrders = function(q) {
+    const filtered = allOrders.filter(o => (o.email || "").toLowerCase().includes(q.toLowerCase()));
+    renderTable(filtered);
+  };
   
-  const htmlTemplate = `
+  /* ================== SEND TRACKING - IMPROVED WITH BETTER ERROR REPORTING ================== */
+  window.sendTracking = async function(id, email) {
+    if (!email) return showToast("No email found for this order!", "error");
+    if (!confirm("Send tracking email to " + email + "?")) return;
+    
+    showLoading("Sending tracking email...");
+    
+    const tracking_id = crypto.randomUUID();
+    
+    // Save tracking ID
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ tracking_id })
+      .eq("id", id);
+    
+    if (updateError) {
+      hideLoading();
+      console.error("Database update error:", updateError);
+      return showToast("Failed to save tracking ID: " + updateError.message, "error");
+    }
+    
+    const trackLink = `https://yourdomain.com/track.html?id=${tracking_id}`;
+    
+    const htmlTemplate = `
     <div style="font-family: Inter, system-ui; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #f1f5f9; line-height: 1.6;">
       <h1 style="color: #6366f1; text-align: center; margin-bottom: 30px;">Everything Fertility by Himiko</h1>
       <div style="background: #1e293b; padding: 40px; border-radius: 20px;">
@@ -500,86 +491,96 @@ window.sendTracking = async function(id, email) {
         <p style="text-align:center; color:#94a3b8;">Thank you for choosing us!<br>We can't wait for you to receive your order ❤️</p>
       </div>
       <p style="text-align:center; margin-top:30px; color:#64748b; font-size:14px;">
-        Everything Fertility by Himiko • admin@everythingfertilitybyhimikolie.shop
+        Everything Fertility by Himiko
       </p>
     </div>`;
-  
-  try {
-    const response = await fetch(`${EDGE_FUNCTION_URL}/send-mail`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email,
-        subject: "Your Order Tracking Link is Ready ✨",
-        html: htmlTemplate
-      })
-    });
     
-    const result = await response.json();
-    hideLoading();
-    
-    if (result.success) {
-      showToast(`✅ Beautiful tracking email sent to ${email}`);
-    } else {
-      showToast("Failed to send email", "error");
+    try {
+      const response = await fetch(`${EDGE_FUNCTION_URL}/send-mail`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email,
+          subject: "Your Order Tracking Link is Ready ✨",
+          html: htmlTemplate
+        })
+      });
+      
+      console.log("Response status:", response.status); // Debug log
+      
+      const result = await response.json();
+      console.log("Full response from send-mail:", result); // This will show the real error
+      
+      hideLoading();
+      
+      if (result.success) {
+        showToast(`✅ Tracking email sent successfully to ${email}`);
+      } else {
+        const errorMsg = result.error || result.details || JSON.stringify(result);
+        console.error("Email sending failed:", errorMsg);
+        showToast(`Failed to send email: ${errorMsg}`, "error");
+      }
+    } catch (e) {
+      hideLoading();
+      console.error("Network / Fetch error:", e);
+      showToast("Failed to reach email service. Check console (F12) for details.", "error");
     }
-  } catch (e) {
-    hideLoading();
-    showToast("Failed to send tracking email", "error");
-  }
-};
-
-/* ================== SEND BROADCAST (Already uses HTML in the function) ================== */
-window.sendBroadcast = async function() {
-  const msg = document.getElementById("msg").value.trim();
-  const link = document.getElementById("link").value.trim();
-  let emailsInput = document.getElementById("emails").value.trim();
+  };
   
-  if (!msg) return showToast("Message cannot be empty", "error");
-  
-  const emails = emailsInput ? emailsInput.split(",").map(e => e.trim()).filter(Boolean) : [];
-  
-  if (emails.length === 0) return showToast("Please add at least one email", "error");
-  
-  showLoading("Sending broadcast to " + emails.length + " recipients...");
-  
-  try {
-    const response = await fetch(`${EDGE_FUNCTION_URL}/send-broadcast`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ msg, link, emails })
-    });
+  /* ================== SEND BROADCAST - Also improved ================== */
+  window.sendBroadcast = async function() {
+    const msg = document.getElementById("msg").value.trim();
+    const link = document.getElementById("link").value.trim();
+    let emailsInput = document.getElementById("emails").value.trim();
     
-    const result = await response.json();
-    hideLoading();
+    if (!msg) return showToast("Message cannot be empty", "error");
     
-    if (result.success) {
-      showToast(`✅ Broadcast sent to ${emails.length} recipients!`);
-    } else {
-      showToast("Failed to send broadcast", "error");
+    const emails = emailsInput ? emailsInput.split(",").map(e => e.trim()).filter(Boolean) : [];
+    
+    if (emails.length === 0) return showToast("Please add at least one email", "error");
+    
+    showLoading("Sending broadcast...");
+    
+    try {
+      const response = await fetch(`${EDGE_FUNCTION_URL}/send-broadcast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ msg, link, emails })
+      });
+      
+      const result = await response.json();
+      hideLoading();
+      
+      if (result.success) {
+        showToast(`✅ Broadcast sent to ${emails.length} recipients!`);
+      } else {
+        const errorMsg = result.error || result.details || "Unknown error";
+        console.error("Broadcast failed:", errorMsg);
+        showToast(`Failed to send broadcast: ${errorMsg}`, "error");
+      }
+    } catch (e) {
+      hideLoading();
+      console.error("Broadcast fetch error:", e);
+      showToast("Failed to reach broadcast service. Check console.", "error");
     }
-  } catch (e) {
-    hideLoading();
-    showToast("Failed to send broadcast", "error");
-  }
-};
-
-/* ================== TICKETS ================== */
-async function loadTickets(){
-  const { data, error } = await supabase
-    .from("tickets")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    showToast("Failed to load tickets", "error");
-    return;
-  }
-
-  document.getElementById("totalTickets").innerText = data?.length || 0;
-
-  document.getElementById("tickets").innerHTML = (data || []).map(t => `
+  };
+  
+  /* ================== TICKETS ================== */
+  async function loadTickets() {
+    const { data, error } = await supabase
+      .from("tickets")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error(error);
+      showToast("Failed to load tickets", "error");
+      return;
+    }
+    
+    document.getElementById("totalTickets").innerText = data?.length || 0;
+    
+    document.getElementById("tickets").innerHTML = (data || []).map(t => `
     <div class="ticket-card">
       <b>${t.name}</b>
       <div style="font-size:0.9rem; opacity:0.8;">${t.email}</div>
@@ -590,19 +591,17 @@ async function loadTickets(){
       </button>
     </div>
   `).join("");
-}
-
-window.markResolved = async function(id){
-  if(confirm("Mark this ticket as resolved?")){
-    showLoading();
-    await supabase.from("tickets").update({ status: "resolved" }).eq("id", id);
-    hideLoading();
-    showToast("Ticket marked as resolved");
-    loadTickets();
   }
-};
-
-
+  
+  window.markResolved = async function(id) {
+    if (confirm("Mark this ticket as resolved?")) {
+      showLoading();
+      await supabase.from("tickets").update({ status: "resolved" }).eq("id", id);
+      hideLoading();
+      showToast("Ticket marked as resolved");
+      loadTickets();
+    }
+  };
 </script>
 
 </body>
