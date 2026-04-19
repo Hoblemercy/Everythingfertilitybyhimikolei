@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --card:#1e293b;
+  --accent:#38bdf8;
+  --success:#22c55e;
+  --danger:#ef4444;
+}
+
+body{
+  margin:0;
+  font-family:system-ui, -apple-system, sans-serif;
+  background:var(--bg);
+  color:#fff;
+  line-height:1.5;
+}
+
+/* LOGIN */
+#login{
+  display:flex;
+  min-height:100vh;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+}
+
+.login-box{
+  background:var(--card);
+  padding:30px;
+  border-radius:16px;
+  width:100%;
+  max-width:340px;
+  text-align:center;
+  box-shadow:0 15px 40px rgba(0,0,0,0.6);
+}
+
+input, select, textarea, button {
+  width:100%;
+  padding:14px;
+  margin-top:12px;
+  border:none;
+  border-radius:8px;
+  font-size:1rem;
+}
+
+input, select, textarea {
+  background:#334155;
+  color:white;
+}
+
+button{
+  background:var(--accent);
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+
+button:hover{
+  background:#22d3ee;
+  transform:translateY(-1px);
+}
+
+/* DASHBOARD */
+#app{display:none;}
+
+header{
+  padding:18px 20px;
+  background:#020617;
+  text-align:center;
+  font-weight:600;
+  font-size:1.25rem;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+
+.container{
+  padding:15px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.grid{
+  display:grid;
+  gap:16px;
+}
+
+@media(min-width:768px){
+  .grid{grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));}
+}
+
+.card{
+  background:var(--card);
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* Scrollable Table for Mobile */
+.table-wrapper {
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  border-radius:10px;
+  margin-top:12px;
+}
+
+table{
+  width:100%;
+  min-width:700px; /* forces horizontal scroll on small screens */
+  border-collapse:collapse;
+}
+
+th, td{
+  padding:14px 12px;
+  text-align:left;
+  border-bottom:1px solid #334155;
+  white-space:nowrap;
+}
+
+th{
+  background:#0f172a;
+  color:var(--accent);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.status{
+  padding:6px 14px;
+  border-radius:9999px;
+  font-size:0.85rem;
+  font-weight:600;
+  display:inline-block;
+}
+
+.status-pending { background:#f59e0b; color:#000; }
+.status-paid { background:#22c55e; color:#000; }
+.status-packed { background:#3b82f6; color:white; }
+.status-on_the_way { background:#8b5cf6; color:white; }
+.status-delivered { background:#10b981; color:white; }
+.status-flagged { background:#ef4444; color:white; }
+
+.ticket-card{
+  background:#334155;
+  padding:18px;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+
+.action-btn{
+  padding:8px 16px;
+  font-size:0.9rem;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+
+.action-btn:hover{
+  transform:scale(1.05);
+}
+
+/* Premium Spinner */
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  flex-direction: column;
+  gap: 16px;
+  color: #fff;
+}
+
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 6px solid rgba(56, 189, 248, 0.2);
+  border-top: 6px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: white;
+  padding: 14px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 10000;
+  min-width: 280px;
+  max-width: 90%;
+  opacity: 0;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+.toast.success { border-left: 5px solid var(--success); }
+.toast.error { border-left: 5px solid var(--danger); }
+
+.toast i {
+  font-size: 1.3rem;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h3><i class="fa-solid fa-lock"></i> Admin Login</h3>
+    <input type="password" id="password" placeholder="Enter admin password">
+    <button onclick="login()"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header><i class="fa-solid fa-gauge"></i> Admin Dashboard</header>
+
+  <div class="container">
+    <!-- STATS -->
+    <div class="grid">
+      <div class="card"><i class="fa-solid fa-box"></i> Total Orders: <strong id="totalOrders">0</strong></div>
+      <div class="card"><i class="fa-solid fa-ticket"></i> Total Tickets: <strong id="totalTickets">0</strong></div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="card">
+      <h3><i class="fa-solid fa-cart-shopping"></i> Orders</h3>
+      <input type="text" placeholder="Search by email..." oninput="searchOrders(this.value)" style="margin-bottom:12px; max-width:320px;">
+
+      <div class="table-wrapper">
+        <table id="ordersTable">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Total (USD)</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TICKETS -->
+    <div class="card">
+      <h3><i class="fa-solid fa-envelope"></i> Support Tickets</h3>
+      <div id="tickets"></div>
+    </div>
+
+    <!-- BROADCAST -->
+    <div class="card">
+      <h3><i class="fa-solid fa-bullhorn"></i> Broadcast Message</h3>
+      <textarea id="msg" rows="3" placeholder="Type your message here..."></textarea>
+      <input id="link" placeholder="Optional link (https://...)">
+      <input id="emails" placeholder="Emails (comma separated)">
+      <button onclick="sendBroadcast()"><i class="fa-solid fa-paper-plane"></i> Send Broadcast</button>
+    </div>
+  </div>
+</div>
+
+<!-- Premium Loading Spinner -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loadingText">Processing...</div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  
+  const supabaseUrl = "https://jffkatwagcfshvddnipr.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8";
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  const EDGE_FUNCTION_URL = "https://jffkatwagcfshvddnipr.supabase.co/functions/v1"; // ← Live URL
+  const HASH = "d51566119c8e92e33598ed78543e259ab19e99cc456181c604a2881198d6f958";
+  
+  let allOrders = [];
+  
+  // SHA-256 (unchanged)
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  
+  function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+    ${type === "success" ? '<i class="fa-solid fa-check-circle"></i>' : 
+      type === "error" ? '<i class="fa-solid fa-circle-xmark"></i>' : 
+      '<i class="fa-solid fa-info-circle"></i>'}
+    <span>${message}</span>
+  `;
+    document.getElementById("toastContainer").appendChild(toast);
+    
+    setTimeout(() => toast.classList.add("show"), 10);
+    setTimeout(() => toast.remove(), 5000);
+  }
+  
+  function showLoading(text = "Processing...") {
+    document.getElementById("loadingText").textContent = text;
+    document.getElementById("loadingOverlay").style.display = "flex";
+  }
+  
+  function hideLoading() {
+    document.getElementById("loadingOverlay").style.display = "none";
+  }
+  
+  /* LOGIN, INIT, loadOrders, renderTable, updateOrderStatus, searchOrders, loadTickets, markResolved remain the same */
+  
+  // ================== SEND TRACKING - FIXED NETWORK ERROR HANDLING ==================
+  window.sendTracking = async function(id, email) {
+    if (!email) return showToast("No email found for this order!", "error");
+    if (!confirm("Send tracking email to " + email + "?")) return;
+    
+    showLoading("Sending tracking email...");
+    
+    const tracking_id = crypto.randomUUID();
+    
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ tracking_id })
+      .eq("id", id);
+    
+    if (updateError) {
+      hideLoading();
+      return showToast("Failed to save tracking ID", "error");
+    }
+    
+    const trackLink = `https://yourdomain.com/track.html?id=${tracking_id}`;
+    
+    const htmlTemplate = `
+    <div style="font-family: Inter, system-ui; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #f1f5f9;">
+      <h1 style="color: #6366f1; text-align: center;">Everything Fertility by Himiko</h1>
+      <div style="background: #1e293b; padding: 35px; border-radius: 20px; margin: 25px 0;">
+        <h2 style="text-align:center; color:#22d3ee;">Tracking Link Ready!</h2>
+        <p>Your tracking number: <strong>${tracking_id}</strong></p>
+        <p style="text-align:center; margin: 30px 0;">
+          <a href="${trackLink}" style="background:#6366f1; color:white; padding:16px 32px; text-decoration:none; border-radius:9999px; font-weight:700; display:inline-block;">
+            📍 Track Your Order
+          </a>
+        </p>
+      </div>
+      <p style="text-align:center; color:#94a3b8;">Thank you ❤️</p>
+    </div>`;
+    
+    try {
+      const response = await fetch(`${EDGE_FUNCTION_URL}/send-mail`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email,
+          subject: "Your Order Tracking Link ✨",
+          html: htmlTemplate
+        })
+      });
+      
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = { success: false, error: `HTTP ${response.status} - Server error` };
+      }
+      
+      hideLoading();
+      
+      if (result.success) {
+        showToast(`✅ Tracking email sent to ${email}`, "success");
+      } else {
+        showToast(`Failed: ${result.error || result.details || "Unknown error from server"}`, "error");
+      }
+    } catch (e) {
+      hideLoading();
+      console.error("Fetch failed:", e); // still logs if you can check later
+      showToast("Network error: Cannot reach email service.<br>Make sure function is deployed.", "error");
+    }
+  };
+  
+  // SEND BROADCAST (same improvement)
+  window.sendBroadcast = async function() {
+    const msg = document.getElementById("msg").value.trim();
+    const link = document.getElementById("link").value.trim();
+    let emailsInput = document.getElementById("emails").value.trim();
+    
+    if (!msg) return showToast("Message cannot be empty", "error");
+    const emails = emailsInput ? emailsInput.split(",").map(e => e.trim()).filter(Boolean) : [];
+    if (emails.length === 0) return showToast("Add at least one email", "error");
+    
+    showLoading("Sending broadcast...");
+    
+    try {
+      const response = await fetch(`${EDGE_FUNCTION_URL}/send-broadcast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ msg, link, emails })
+      });
+      
+      const result = await response.json();
+      hideLoading();
+      
+      if (result.success) {
+        showToast(`✅ Sent to ${emails.length} recipients`, "success");
+      } else {
+        showToast(`Broadcast failed: ${result.error || "Unknown"}`, "error");
+      }
+    } catch (e) {
+      hideLoading();
+      showToast("Network error: Cannot reach broadcast service", "error");
+    }
+  };
+  
+  /* Rest of your code (loadTickets, markResolved, etc.) */
+  async function loadTickets() {
+    const { data, error } = await supabase.from("tickets").select("*").order("created_at", { ascending: false });
+    if (error) return showToast("Failed to load tickets", "error");
+    
+    document.getElementById("totalTickets").innerText = data?.length || 0;
+    
+    document.getElementById("tickets").innerHTML = (data || []).map(t => `
+    <div class="ticket-card">
+      <b>${t.name}</b>
+      <div style="font-size:0.9rem; opacity:0.8;">${t.email}</div>
+      <div><strong>${t.issue_type}</strong></div>
+      <p>${t.message}</p>
+      <button onclick="markResolved('${t.id}')" style="background:var(--success); width:auto; padding:10px 18px; border-radius:8px;">
+        <i class="fa-solid fa-check"></i> Mark Resolved
+      </button>
+    </div>
+  `).join("");
+  }
+  
+  window.markResolved = async function(id) {
+    if (confirm("Mark resolved?")) {
+      showLoading();
+      await supabase.from("tickets").update({ status: "resolved" }).eq("id", id);
+      hideLoading();
+      showToast("Ticket resolved");
+      loadTickets();
+    }
+  };
+</script>
+
+</body>
+</html>
