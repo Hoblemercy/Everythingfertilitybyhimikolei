@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Premium Order Tracking</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<style>
+:root {
+  --primary:#6366f1;
+  --accent:#a78bfa;
+  --bg:#0a0f1c;
+  --card:rgba(15,23,42,0.85);
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --success:#10b981;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:radial-gradient(circle at top,#111827,#020617);
+  color:var(--text);
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+  flex-wrap:wrap;
+}
+
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(20px,4vw,30px);
+  background:linear-gradient(90deg,#6366f1,#a78bfa);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:20px;
+}
+
+.card{
+  background:var(--card);
+  backdrop-filter:blur(18px);
+  border-radius:24px;
+  padding:20px;
+  border:1px solid rgba(255,255,255,0.05);
+}
+
+.status-box{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.badge{
+  padding:8px 14px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+}
+
+.progress-bar{
+  height:8px;
+  background:#1e293b;
+  border-radius:10px;
+  margin-top:12px;
+  overflow:hidden;
+}
+
+.progress{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#6366f1,#a78bfa);
+}
+
+.timeline-item{
+  position:relative;
+  padding-left:50px;
+  margin-bottom:30px;
+}
+
+.timeline-icon{
+  position:absolute;
+  left:0;
+  top:0;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:#1e293b;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.timeline-item.active .timeline-icon{
+  background:#10b981;
+}
+
+.timeline-line{
+  position:absolute;
+  left:17px;
+  top:40px;
+  width:2px;
+  height:40px;
+  background:#1e293b;
+}
+
+.active-line{
+  background:#10b981;
+}
+
+.product-gallery{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+}
+
+.product-gallery img{
+  width:80px;
+  height:80px;
+  border-radius:12px;
+  object-fit:cover;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  flex:1;
+  text-align:center;
+  padding:12px;
+  border-radius:10px;
+  font-weight:600;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.primary{background:linear-gradient(90deg,#6366f1,#a78bfa);color:#fff}
+.secondary{background:#1e293b;color:#fff}
+
+@media(max-width:1024px){
+  .grid{grid-template-columns:1fr;}
+}
+
+@media(max-width:600px){
+  .container{padding:15px;}
+  .card{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<header>
+  <div class="logo">Everythingfertilitybyhimiko</div>
+</header>
+
+<div class="grid">
+
+<div>
+
+<div class="card">
+  <div class="status-box">
+    <div>
+      <h2 id="orderNumber">Order #----</h2>
+      <small id="customerName" style="color:var(--muted)"></small>
+    </div>
+    <div id="statusBadge" class="badge">PROCESSING</div>
+  </div>
+
+  <div class="progress-bar">
+    <div id="progress" class="progress"></div>
+  </div>
+  <small id="progressText">0%</small>
+</div>
+
+<div class="card">
+  <h3>Tracking Timeline</h3>
+  <div id="timeline"></div>
+</div>
+
+</div>
+
+<div>
+
+<div class="card">
+  <h3>Products</h3>
+  <div id="images" class="product-gallery"></div>
+  <p id="productName"></p>
+  <h2 id="price"></h2>
+</div>
+
+<div class="card">
+  <h3>Delivery Info</h3>
+  <p id="address"></p>
+</div>
+
+<div class="card actions">
+  <a class="btn primary" href="#">Track Shipment</a>
+  <a class="btn secondary" href="#">Contact Support</a>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+const supabaseClient = supabase.createClient(
+"https://jffkatwagcfshvddnipr.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8"
+);
+
+const orderNumber = document.getElementById("orderNumber");
+const customerName = document.getElementById("customerName");
+const productName = document.getElementById("productName");
+const price = document.getElementById("price");
+const address = document.getElementById("address");
+const images = document.getElementById("images");
+const progressText = document.getElementById("progressText");
+const timeline = document.getElementById("timeline");
+const statusBadge = document.getElementById("statusBadge");
+
+const id = new URLSearchParams(window.location.search).get("id");
+
+if (!id) {
+  document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px'>Invalid tracking link</h2>";
+}
+
+async function load() {
+  try {
+    const { data, error } = await supabaseClient
+      .from("orders")
+      .select("*")
+      .eq("tracking_id", id)
+      .single();
+
+    if (error || !data) {
+      document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px'>Order not found</h2>";
+      return;
+    }
+
+    orderNumber.textContent = "Order #" + (data.order_number || "—");
+    customerName.textContent = `${data.first_name || ""} ${data.last_name || ""}`;
+
+    const products = Array.isArray(data.products) ? data.products : [];
+    productName.textContent = products.map(p => p.name).join(", ") || "Products";
+
+    price.textContent = "$" + (data.total || 0);
+    address.textContent = data.full_address || "—";
+
+    images.innerHTML = "";
+    products.forEach(p => {
+      if (p.image) {
+        const img = document.createElement("img");
+        img.src = p.image;
+        images.appendChild(img);
+      }
+    });
+
+    const status = (data.status || "").toLowerCase();
+
+    const prettyStatus = {
+      pending: "Processing",
+      paid: "Payment Confirmed",
+      packed: "Preparing Order",
+      shipped: "On The Way",
+      on_the_way: "On The Way",
+      delivered: "Delivered"
+    };
+
+    statusBadge.textContent = prettyStatus[status] || status.toUpperCase();
+
+    if (status === "delivered") statusBadge.style.background = "#10b981";
+    else if (["shipped","on_the_way"].includes(status)) statusBadge.style.background = "#3b82f6";
+    else if (["paid","packed"].includes(status)) statusBadge.style.background = "#f59e0b";
+    else statusBadge.style.background = "#6366f1";
+
+    let progress = 25;
+    if (["paid","packed"].includes(status)) progress = 50;
+    if (["shipped","on_the_way"].includes(status)) progress = 75;
+    if (status === "delivered") progress = 100;
+
+    const progressEl = document.getElementById("progress");
+    progressEl.style.width = progress + "%";
+
+    progressText.textContent =
+      progress === 100 ? "🎉 Delivered Successfully" : progress + "% complete";
+
+    const steps = [
+      { name: "Order Placed", icon: "🧾" },
+      { name: "Packed", icon: "📦" },
+      { name: "Shipped", icon: "🚚" },
+      { name: "Delivered", icon: "🏠" }
+    ];
+
+    timeline.innerHTML = "";
+
+    steps.forEach((step, i) => {
+      const done = (progress / 25) > i;
+
+      timeline.innerHTML += `
+        <div class="timeline-item ${done ? "active" : ""}">
+          <div class="timeline-icon">
+            ${done ? "✔" : step.icon}
+          </div>
+          <div><strong>${step.name}</strong></div>
+          ${i !== steps.length - 1 ? `<div class="timeline-line ${done ? "active-line" : ""}"></div>` : ""}
+        </div>`;
+    });
+
+    if (progress === 100) confetti();
+
+  } catch (err) {
+    document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px'>Something went wrong</h2>";
+  }
+}
+
+load();
+</script>
+
+</body>
+</html>
